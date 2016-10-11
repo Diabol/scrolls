@@ -1,2 +1,2 @@
 # scrolls
-The Autoamted Delivery Report Engine
+The Automated Delivery Report Engine
