@@ -5,13 +5,6 @@ import groovyx.net.http.*
 import static groovyx.net.http.ContentType.JSON
 import static groovyx.net.http.Method.*
 
-//@Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder', version='0.5.2')
-//@GrabExclude("org.codehaus.groovy:groovy")
-
-/**
- * Misc operations towards the Jira REST API
- *
- */
 class JiraReportGenerator
 {
 

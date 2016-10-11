@@ -1,8 +1,5 @@
 package se.diabol.notifier.releasenotes
 
-/**
- * Generates change report between tow versions by extracting information from Subversion
- */
 class GitReportGenerator extends AbstractReportGenerator {
 
     def git = "git --no-pager"
