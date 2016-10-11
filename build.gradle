@@ -3,9 +3,9 @@ apply plugin: 'maven'
 apply plugin: 'application'
 
 group = 'se.diabol.notifier'
-version = '1.0-SNAPSHOT'
+version = '0.0.1-SNAPSHOT'
 
-description = """Release Notes Generation"""
+description = """An Automated Delivery Report Engine"""
 
 mainClassName = 'se.diabol.notifier.releasenotes.ReleaseNotesGenerator'
 
@@ -13,7 +13,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-    maven { url "http://repo.maven.apache.org/maven2" }
+    jcenter()
 }
 
 dependencies {
@@ -26,7 +26,7 @@ dependencies {
     testCompile group: 'com.sun.grizzly', name: 'grizzly-comet-webserver', version:'1.9.55'
 }
 
-task uberjar(type: Jar,dependsOn:[':compileJava',':compileGroovy']) {
+task uberjar(type: Jar, dependsOn:[':compileJava',':compileGroovy']) {
     from files(sourceSets.main.output.classesDir)
     from configurations.runtime.asFileTree.files.collect { zipTree(it) }
 
