@@ -1,4 +1,4 @@
-package se.diabol.notifier.releasenotes
+package se.diabol.scrolls
 
 import org.junit.runner.RunWith
 import org.spockframework.runtime.Sputnik

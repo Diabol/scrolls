@@ -1,7 +1,4 @@
-package se.diabol.notifier.releasenotes
-
-import groovy.json.JsonBuilder
-
+package se.diabol.scrolls
 /**
  * Created with IntelliJ IDEA.
  * User: andreas
