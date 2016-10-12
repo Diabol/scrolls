@@ -2,6 +2,8 @@ package se.diabol.notifier.releasenotes
 
 import groovyx.net.http.*
 
+import java.nio.charset.StandardCharsets
+
 import static groovyx.net.http.ContentType.JSON
 import static groovyx.net.http.Method.*
 
@@ -20,9 +22,18 @@ class JiraReportGenerator
 
     def getProjects() {
         print "Fetching jira project\t"
-        def http = new HTTPBuilder( baseUrl + '/rest/api/latest/project')
-        http.encoderRegistry = new EncoderRegistry( charset: 'utf-8' )
-        http.request( GET, JSON ) { req ->
+        return doQuery("${baseUrl}/rest/api/latest/project")
+    }
+
+    def getIssue(key) {
+        print "Fetching jira issue: ${key}\t"
+        return doQuery("${baseUrl}/rest/api/latest/issue/${key}")
+    }
+
+    private doQuery(String url) {
+        def http = new HTTPBuilder(url)
+        http.encoderRegistry = new EncoderRegistry(charset: StandardCharsets.UTF_8.name())
+        http.request(GET, JSON) { req ->
             headers.'User-Agent' = 'Mozilla/5.0'
             headers.'Authorization' = 'Basic ' + "${username}:${password}".toString().bytes.encodeBase64().toString()
 
@@ -34,27 +45,6 @@ class JiraReportGenerator
             response.failure = { resp, json ->
                 println Failed: resp.status
                 println json
-                return
-            }
-        }
-    }
-
-    def getIssue(key) {
-        print "Fetching jira issue: ${key}\t"
-        def http = new HTTPBuilder( baseUrl + '/rest/api/latest/issue/'+key)
-        http.encoderRegistry = new EncoderRegistry( charset: 'utf-8' )
-        http.request( GET, JSON ) { req ->
-            headers.'User-Agent' = 'Mozilla/5.0'
-            headers.'Authorization' = 'Basic ' + "${username}:${password}".toString().bytes.encodeBase64().toString()
-
-            response.success = { resp, json ->
-               println Success: resp.status
-               return json
-            }
-
-            response.failure = { resp, json ->
-               println Failed: resp.status
-               println json
                 return
             }
         }
@@ -205,8 +195,5 @@ class JiraReportGenerator
             case "Service Request": return iconFeature
             default:      return iconTask
         }
-    }
-
-    static void main(String[] args) {
     }
 }
