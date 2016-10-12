@@ -2,12 +2,12 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'application'
 
-group = 'se.diabol.notifier'
+group = 'se.diabol.scrolls'
 version = '0.0.1-SNAPSHOT'
 
 description = """An Automated Delivery Report Engine"""
 
-mainClassName = 'se.diabol.notifier.releasenotes.ScrollsGenerator'
+mainClassName = 'se.diabol.scrolls.ScrollsGenerator'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
