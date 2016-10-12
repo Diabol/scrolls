@@ -67,7 +67,7 @@ class ScrollsGenerator {
         if (template!=null) {
             temp = cfg.getTemplate(template);
         } else {
-            temp = cfg.getTemplate("releasenotes-template.html");
+            temp = cfg.getTemplate("scrolls-template.html");
         }
         println "Read template ${template}: "+ (temp ? "ok" : "not ok")
         Map binding = [header: header]
@@ -152,7 +152,7 @@ class ScrollsGenerator {
         def remote = opt.z
         def service = opt.s
 
-        def configUrl = configPath? new File(configPath).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("releasenotes-config.groovy")
+        def configUrl = configPath? new File(configPath).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
 
         println "Reading config from: ${configUrl}"
         def config = new ConfigSlurper().parse(configUrl)
