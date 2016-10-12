@@ -2,9 +2,10 @@ package se.diabol.notifier.releasenotes
 
 import org.junit.runner.RunWith
 import org.spockframework.runtime.Sputnik
+import spock.lang.Specification
 
 @RunWith(Sputnik)
-class RunReleaseNotesGeneratorTest extends spock.lang.Specification {
+class ScrollsGeneratorTest extends Specification {
 
     private PrintStream outBefore;
     def releaseNotesFilePath = "build/ReleaseNotes.html";
@@ -22,7 +23,7 @@ class RunReleaseNotesGeneratorTest extends spock.lang.Specification {
         "rm -f ${releaseNotesFilePath}"
 
         when: "generating html report"
-        ReleaseNotesGenerator generator = new ReleaseNotesGenerator();
+        ScrollsGenerator generator = new ScrollsGenerator();
         generator.generateHtmlReport(headerDataMock, gitDataMock, jiraDataMock, null, null, null, releaseNotesFilePath);
 
         then: "html report is generated without exceptions"
@@ -41,14 +42,12 @@ class RunReleaseNotesGeneratorTest extends spock.lang.Specification {
         given: "out is a release request in jira"
 
         when: "no environment argument provided when running rel req gen"
-        ReleaseNotesGenerator.invokeMethod("main", ["-v1","0.0.9","-v2","1.0.0","-o","jira","-s", "chips-helloworld"].toArray())
+        ScrollsGenerator.invokeMethod("main", ["-v1", "0.0.9", "-v2", "1.0.0", "-o", "jira", "-s", "chips-helloworld"].toArray())
 
         then: "something happens"
         String out = new String(myOut.toByteArray(), "UTF-8");
         assert out.contains("You must specify environment when creating jira release request")
     }
-
-
 
     static def headerDataMock = [
             component: "componentA",
@@ -92,5 +91,4 @@ class RunReleaseNotesGeneratorTest extends spock.lang.Specification {
                     stories: []
             ]]
     ]
-
 }

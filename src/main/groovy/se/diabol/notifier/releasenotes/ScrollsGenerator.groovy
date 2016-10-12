@@ -2,7 +2,7 @@ package se.diabol.notifier.releasenotes
 
 import freemarker.template.*;
 
-class ReleaseNotesGenerator {
+class ScrollsGenerator {
 
     def config
 
@@ -115,7 +115,7 @@ class ReleaseNotesGenerator {
         generateHtmlReport(header, repoInfo, jiraInfo, null, null, template, outputfile)
     }
 
-	static void main(String[] args) {
+    static void main(String[] args) {
         def cli = new CliBuilder()
         cli.h( longOpt: 'help', required: false, 'show usage information' )
         cli.e( longOpt: 'environment', argName: 'environment', required: false, args: 1, 'The environment to check version against')
@@ -152,7 +152,7 @@ class ReleaseNotesGenerator {
         def remote = opt.z
         def service = opt.s
 
-        def configUrl = configPath? new File(configPath).toURL() : ReleaseNotesGenerator.class.getClassLoader().getResource("releasenotes-config.groovy")
+        def configUrl = configPath? new File(configPath).toURL() : ScrollsGenerator.class.getClassLoader().getResource("releasenotes-config.groovy")
 
         println "Reading config from: ${configUrl}"
         def config = new ConfigSlurper().parse(configUrl)
@@ -186,7 +186,7 @@ class ReleaseNotesGenerator {
         }
 
         try {
-            def rnc = new ReleaseNotesGenerator(config:  config)
+            def rnc = new ScrollsGenerator(config:  config)
             rnc.generateReleaseNotes(env, remote, version1, version2, template, out, user, service)
         } catch (Exception e) {
             println "Failed to create release notes for env ${env} from version ${version1} to version ${version2} with remote ${remote}"
@@ -199,5 +199,5 @@ class ReleaseNotesGenerator {
                 System.exit(1)
             }
         }
-	}
+    }
 }
