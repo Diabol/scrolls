@@ -110,7 +110,7 @@ class JiraReportGenerator
                     ])
                 }
 
-                if ((epicAdded) || ("Epic".equals(json.fields.issuetype.name))) {
+                if ((epicAdded) || "Epic" == json.fields.issuetype.name) {
                     nbrOfEpics++
                 } else if (storyAdded) {
                     nbrOfStories++
@@ -121,19 +121,12 @@ class JiraReportGenerator
             }
         }
 
-        def report  = [summary: [nbrOfIssues: nbrOfIssues, nbrOfStories: nbrOfStories, nbrOfEpics: nbrOfEpics], issues: issues]
-
-        return report
+        return [summary: [nbrOfIssues: nbrOfIssues, nbrOfStories: nbrOfStories, nbrOfEpics: nbrOfEpics], issues: issues]
     }
 
     def issueReleased(releaseDate, currentState) {
         def currentDate = new Date()
-
-        if (releaseDate.before(currentDate) && ("In use".equals(currentState) || "Closed".equals(currentState))) {
-            return true
-        }
-
-        return false
+        return (releaseDate.before(currentDate) && (currentState in ['In use', 'Closed']))
     }
 
     def addIssueToEpicIfApplicable(issues, check) {
@@ -145,7 +138,7 @@ class JiraReportGenerator
             def issueIcon = getIssueIcon(check.fields.issuetype.name)
 
             issues.each { issue ->
-                if (issue.key.equals(check.customfield_11622)) {
+                if (issue.key == check.customfield_11622) {
                     issue.stories.add([
                                         key: check.key,
                                         status: check.fields.status.name,
