@@ -6,8 +6,8 @@ class ScrollsGenerator {
 
     def config
 
-    def getRepositoryInfo(remote, version1, version2) {
-        def repositoryInfo = null
+    def getRepositoryInfo(version1, version2) {
+        def repositoryInfo
         if (config.repositoryType == "git") {
             println "\nUsing GitReportGenerator..."
             GitReportGenerator reportGenerator = new GitReportGenerator(
@@ -90,7 +90,7 @@ class ScrollsGenerator {
                 jenkinsUrl: config.jenkinsUrl? config.jenkinsUrl : ""
         ]
 
-        def repoInfo = getRepositoryInfo(remote, version1, version2)
+        def repoInfo = getRepositoryInfo(version1, version2)
 
         def jiraInfo
         if (repoInfo != null) {
@@ -152,7 +152,7 @@ class ScrollsGenerator {
         def remote = opt.z
         def service = opt.s
 
-        def configUrl = configPath? new File(configPath).toURL() : ScrollsGenerator.class.getClassLoader().getResource("releasenotes-config.groovy")
+        def configUrl = configPath? new File(configPath).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("releasenotes-config.groovy")
 
         println "Reading config from: ${configUrl}"
         def config = new ConfigSlurper().parse(configUrl)
