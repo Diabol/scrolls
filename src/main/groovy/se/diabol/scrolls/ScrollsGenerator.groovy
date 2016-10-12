@@ -119,13 +119,13 @@ class ScrollsGenerator {
         def cli = new CliBuilder()
         cli.h( longOpt: 'help', required: false, 'show usage information' )
         cli.e( longOpt: 'environment', argName: 'environment', required: false, args: 1, 'The environment to check version against')
-        cli.v1( longOpt: 'version1', argName: 'version1', required: false, args: 1, 'If no environment is specificed this is the version to compare with' )
+        cli.v1( longOpt: 'version1', argName: 'version1', required: false, args: 1, 'If no environment is specified this is the version to compare with' )
         cli.v2( longOpt: 'version2', argName: 'version2', required: true, args: 1, 'The second version to compare with')
         cli.r( longOpt: 'repositoryRoot', argName: 'repositoryRoot', required: false, args: 1, 'Git repositories root dir here to find all components [./]')
         cli.c( longOpt: 'configPath', argName: 'configPath', required: false, args: 1, 'Path to configPath file')
-        cli.o( longOpt: 'output', argName: 'fileName', required: false, args: 1, 'Output file name [./ReleaseNotes.html]')
+        cli.o( longOpt: 'output', argName: 'fileName', required: false, args: 1, 'Output file name [./Scrolls.html]')
         cli.f( longOpt: 'failsafe',  required: false, 'Should script fail on errors? [false]' )
-        cli.t( longOpt: 'template',  required: false, args: 1, 'Path to freemaker html template [./]' )
+        cli.t( longOpt: 'template',  required: false, args: 1, 'Path to FreeMarker html template [./]' )
         cli.u( longOpt: 'user',  required: false, args: 1, 'Current user []' )
         cli.z( longOpt: 'remote',  required: false, args: 1, 'If set, perform a remote scm log when collecting log information. Otherwise operate on the local directory []' )
         cli.oc( longOpt: 'omitClosed',  required: false, 'Omit closed issues when linking commits? [true]' )
@@ -145,7 +145,7 @@ class ScrollsGenerator {
         def version2 = opt.v2
         def reposRoot = opt.r
         def configPath = opt.c
-        def out = opt.o ? opt.o : "ReleaseNotes.html"
+        def out = opt.o ? opt.o : "Scrolls.html"
         def template = opt.t ? opt.t : null
         boolean failsafe = opt.f
         def user = opt.u

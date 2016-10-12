@@ -8,7 +8,7 @@ import spock.lang.Specification
 class ScrollsGeneratorTest extends Specification {
 
     private PrintStream outBefore;
-    def releaseNotesFilePath = "build/ReleaseNotes.html";
+    def releaseNotesFilePath = "build/Scrolls.html";
 
     def setup() {
         outBefore = System.out;
