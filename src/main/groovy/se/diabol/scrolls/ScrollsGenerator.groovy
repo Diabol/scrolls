@@ -1,28 +1,16 @@
 package se.diabol.scrolls
 
 import freemarker.template.*
+import org.reflections.Reflections
 
 import java.nio.charset.StandardCharsets;
 
 class ScrollsGenerator {
 
     def config
+    static plugins = new Reflections('se.diabol.scrolls').getSubTypesOf(ScrollsPlugin)
 
-    def getRepositoryReport(version1, version2) {
-        def repositoryInfo
-        if (config.repositoryType == "git") {
-            println "\nUsing GitReportGenerator..."
-            GitReportGenerator reportGenerator = new GitReportGenerator(
-                    modulesRegexps: config.moduleRegexps,
-                    changeTypeRegexps: config.changeTypeRegexps
-            )
-            repositoryInfo = reportGenerator.createReport(version1, version2, config.logOptions)
-        } else {
-            throw new IllegalArgumentException("Unsupported repository type: ${config.repositoryType}")
-        }
-        return repositoryInfo
-    }
-
+    /*
     def getJiraInfo(commitComments) {
         JiraReportGenerator jr = new JiraReportGenerator(
             baseUrl: config.jiraBaseUrl,
@@ -38,42 +26,45 @@ class ScrollsGenerator {
 
         return jr.createJiraReport(commitComments)
     }
+    */
 
-    def generateHtmlReport(header, repository, jira, templateName, outputFile) {
+    def generateHtmlReport(Map header, Map reports, String outputFile) {
         Configuration cfg = new Configuration()
         cfg.setClassForTemplateLoading(getClass(), "/")
         cfg.defaultEncoding = StandardCharsets.UTF_8.name()
-        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER)
+        cfg.templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
 
-        def templateNameToRead = templateName ?: 'scrolls-template.html'
+        def templateNameToRead = config.templateName ?: 'scrolls-template.html'
         Template template = cfg.getTemplate(templateNameToRead)
 
-        println "Read template ${templateName}: " + (template ? "ok" : "not ok")
+        println "Read template ${templateNameToRead}: " + (template ? "ok" : "not ok")
         Map binding = [header: header]
-        if (repository) {
-            binding.repository = repository
-        }
-        if (jira) {
-            binding.jira = jira
-        }
+        binding.reports = reports
 
-        def outFile = new File(outputFile)
-        outFile.withWriter {
+        new File(outputFile).withWriter {
             template.process(binding, it)
         }
     }
 
-    def generateScrolls(environment, version1, version2, templateName, outputFile) {
-        def header = [
+    def generateScrolls(String oldVersion, String newVersion, String outputFile) {
+        Map header = [
                 component: config.component,
-                environment: environment ? environment : "",
                 date: new Date().format("yyyy-MM-dd HH:mm:ss"),
-                oldVersion: version1,
-                newVersion: version2,
-                jenkinsUrl: config.jenkinsUrl? config.jenkinsUrl : ""
+                oldVersion: oldVersion,
+                newVersion: newVersion,
         ]
 
-        def repositoryReport = getRepositoryReport(version1, version2)
+        Map reports
+        plugins.each {
+            Class<ScrollsPlugin> pluginClass = Class.forName(it.name) as Class<ScrollsPlugin>
+            ScrollsPlugin plugin = pluginClass.getConstructor().newInstance()
+
+            def pluginConfig = config.(plugin.getName()) as Map
+            reports[plugin.getName()] = plugin.generate(pluginConfig, oldVersion, newVersion)
+        }
+
+        /*
+        def repositoryReport = getRepositoryReport(oldVersion, newVersion)
         def jiraReport = null
         if (repositoryReport) {
             println "\nRepository report:\n\n${repositoryReport}\n\n"
@@ -81,39 +72,9 @@ class ScrollsGenerator {
 
             jiraReport = getJiraInfo(repositoryReport.commits)
             println "\n*** JiraInfo: " + jiraReport
-        }
+        }*/
 
-        def watchers = []
-
-        repositoryReport?.commits?.each { commit ->
-            if ("git" == config.repositoryType) {
-                watchers.add(commit.email)
-                println("Added: ${commit.email} to watchers list")
-            } else {
-                watchers.add(commit.author)
-                println("Added: ${commit.author} to watchers list")
-            }
-        }
-        generateHtmlReport(header, repositoryReport, jiraReport, templateName, outputFile)
-    }
-
-    static OptionAccessor parseOptions(String[] args) {
-        def cli = new CliBuilder()
-        cli.h(longOpt: 'help', required: false, 'show usage information')
-        cli._(longOpt: 'old-version', argName: 'oldVersion', required: true, args: 1, 'The old version to compare with')
-        cli._(longOpt: 'new-version', argName: 'newVersion', required: true, args: 1, 'The new version to compare with')
-        cli.c(longOpt: 'config', required: false, args: 1, 'Path to config file')
-        cli.o(longOpt: 'output', required: false, args: 1, 'Output file name [./Scrolls.html]')
-
-        def options = cli.parse(args)
-        if (!options) {
-            return
-        }
-        if (options.help) {
-            cli.usage()
-        }
-
-        return options
+        generateHtmlReport(header, reports, outputFile)
     }
 
     static void main(String[] args) {
@@ -127,9 +88,9 @@ class ScrollsGenerator {
 
         try {
             def rnc = new ScrollsGenerator(config:  config)
-            rnc.generateScrolls(options.oldVersion, options.newVersion, output)
+            rnc.generateScrolls(options.'old-version' as String, options.'new-version' as String, output)
         } catch (Exception e) {
-            def msg = "Failed to create release notes for versions ${options.oldVersion} to ${options.newVersion}"
+            def msg = "Failed to create scrolls for versions ${options.'old-version'} to ${options.'new-version'}"
             println msg
             e.printStackTrace()
             new File(output).withPrintWriter {writer ->
@@ -139,8 +100,35 @@ class ScrollsGenerator {
         }
     }
 
-    static readConfig(config) {
-        def path = config ? new File(config).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
+    static OptionAccessor parseOptions(String[] args) {
+        def cli = new CliBuilder(usage: 'scrolls --old-version 1.0.0 --new-version 2.0.0')
+        cli._(longOpt: 'old-version', required: true, args: 1, 'The old version to compare with')
+        cli._(longOpt: 'new-version', required: true, args: 1, 'The new version to compare with')
+
+        cli.h(longOpt: 'help', required: false, 'show usage information')
+        cli.c(longOpt: 'config', required: false, args: 1, 'Path to config file')
+        cli.o(longOpt: 'output', required: false, args: 1, 'Output file name [./Scrolls.html]')
+
+        def options = cli.parse(args)
+
+        if (options && options.help) {
+            cli.usage()
+            plugins.each {  // TODO: This needs to use the actual instances...
+                println it.name
+            }
+            return null
+        } else {
+            return options
+        }
+    }
+
+    static readConfig(def config) {
+        def path
+        if (config) {
+            path = new File(config).toURI().toURL()
+        } else {
+            path = ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
+        }
 
         println "Reading configuration from: ${path}"
         return new ConfigSlurper().parse(path)

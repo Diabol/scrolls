@@ -25,8 +25,8 @@ class ScrollsGeneratorTest extends Specification {
         "rm -f ${scrollsOutputFile}"
 
         when: "generating html report"
-        ScrollsGenerator generator = new ScrollsGenerator();
-        generator.generateHtmlReport(headerDataMock, gitDataMock, jiraDataMock, null, scrollsOutputFile);
+        ScrollsGenerator generator = new ScrollsGenerator(config: []);
+        generator.generateHtmlReport(headerDataMock, reportsMock, scrollsOutputFile);
 
         then: "html report is generated without exceptions"
         assert "ls ${scrollsOutputFile}".execute().getText() == "${scrollsOutputFile}\n"
@@ -36,13 +36,13 @@ class ScrollsGeneratorTest extends Specification {
         assert htmlContent.contains("<p>2 Jira issues from 1 stories and 1 epics affected</p>")
     }
 
-    def 'no scrolls generated when environment or version1 options are missing'() {
+    def 'no scrolls generated when version options are missing'() {
         final ByteArrayOutputStream sout = new ByteArrayOutputStream()
         System.setOut(new PrintStream(sout))
 
         //given: 'nothing'
-        when: 'no version1 given'
-        ScrollsGenerator.invokeMethod('main', ['-v2', '1.0.0'].toArray())
+        when: 'no versions given'
+        ScrollsGenerator.invokeMethod('main', [].toArray())
 
         then: "error is returned"
         String out = sout.toString(StandardCharsets.UTF_8.name())
@@ -51,11 +51,14 @@ class ScrollsGeneratorTest extends Specification {
 
     static def headerDataMock = [
             component: "componentA",
-            environment: "CI",
             date: new Date().format("yyyy-MM-dd HH:mm:ss"),
             oldVersion: "V1-old",
             newVersion: "V2-new",
-            jenkinsUrl: "http://localhost"
+    ]
+
+    static def reportsMock = [
+            git: gitDataMock,
+            jira: jiraDataMock
     ]
 
     static def gitDataMock = [

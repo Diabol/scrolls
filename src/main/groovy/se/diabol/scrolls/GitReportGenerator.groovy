@@ -2,19 +2,12 @@ package se.diabol.scrolls
 
 class GitReportGenerator implements ScrollsPlugin {
 
-    def git = "git --no-pager"
-    def repositoryRoot = "./"
-    def modulesRegexps = ["default": ".*"]
-    def changeTypeRegexps = [:]
-    def logOptions = ''
+    def config
 
     @Override
-    Map generate(String oldVersion, String newVersion) {
-        // TODO: How to handle input, has to come from options/config?!?
-        // TODO: When plugin class is created options are set through the constructor
-        // TODO: Or, assume a specific method will always take two params (oldVersion, newVersion) and it's up to the plugin
-        // TODO: to handle the rest, albeit the rest can come from configuration?!?
-        // TODO: gitLogOptions?
+    Map generate(Map config, String oldVersion, String newVersion) {
+        this.config = config // TODO: This became a bit ugly... would work if the name method was static...
+
         def commits = []
         def commitLog = getCommitLog(oldVersion, newVersion)
         commitLog.each {c ->
@@ -31,17 +24,22 @@ class GitReportGenerator implements ScrollsPlugin {
         return 'git'
     }
 
+    @Override
+    Map getConfigInfo() {
+        return [:]
+    }
+
     def getCommitLog(tag1, tag2){
-        println "Running git log on ${repositoryRoot}"
+        println "Running git log on ${config.repositoryRoot}"
         def command
 
         if (tag1.isInteger() && (tag1.toInteger() == 0)) {
-            command = "${git} log --pretty=oneline ${logOptions} ${tag2}"
+            command = "${config.git} log --pretty=oneline ${config.logOptions} ${tag2}"
         } else {
-            command = "${git} log --pretty=oneline ${logOptions} ${tag1}..${tag2}"
+            command = "${config.git} log --pretty=oneline ${config.logOptions} ${tag1}..${tag2}"
         }
 
-        def result = execCommand(command, repositoryRoot)
+        def result = execCommand(command, config.repositoryRoot)
         def commits = [] as HashMap
         result.stdout.eachLine { l ->
             def match = l =~ /^([a-z0-9]*) (.*)$/
@@ -54,7 +52,7 @@ class GitReportGenerator implements ScrollsPlugin {
     }
 
     def getCommitDetails(id) {
-        def result = execCommand("${git} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", repositoryRoot)
+        def result = execCommand("${config.git} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", config.repositoryRoot)
         //println "Found git commit details for [${id}]:\n${result.stdout}"
         def commitDetails = [] as HashMap
         boolean headerDone = false;
@@ -94,7 +92,7 @@ class GitReportGenerator implements ScrollsPlugin {
         return commitDetails
     }
 
-    def calcSummary(commits) {
+    static def calcSummary(commits) {
         def summary = [
                 nbrOfChanges: commits.size(),
                 nbrOfPeople: commits.collect{it.author}.unique().size(),
@@ -108,12 +106,12 @@ class GitReportGenerator implements ScrollsPlugin {
         commits.each { commit ->
             //println "Analyzing: ${commit}"
             commit.files.each {file ->
-                modulesRegexps.each { mod,modRegExp ->
+                config.modulesRegexps.each { mod,modRegExp ->
                     println("Checking file ${file} against mod ${mod} and expr ${modRegExp}: " + (file =~ /${modRegExp}/))
                     if (file =~ /${modRegExp}/ ) {
                         commit.module = mod
                         def changeTypes = [] as HashSet
-                        changeTypeRegexps.each { tag,tagRegExp ->
+                        config.changeTypeRegexps.each { tag,tagRegExp ->
                             println "Matching: '${file}' with change type regexp: '${tagRegExp}'"
                             if (file =~ /${tagRegExp}/) {
                                 println "Matched! Adding changetype: '${tag}'"
@@ -158,13 +156,14 @@ class GitReportGenerator implements ScrollsPlugin {
     }
 
     public static void main(String[] args) {
-        GitReportGenerator grg = new GitReportGenerator(
+        GitReportGenerator grg = new GitReportGenerator()
+        def config = [
                 repositoryRoot: "./",
                 modulesRegexps: ["eb": "^web/.*"],
                 changeTypeRegexps: ["javascript": ".*/javascript/.*\\.js"]
-        )
+        ]
 
-        def report = grg.generate("release-1.0.990","release-1.0.999")
+        def report = grg.generate(config, "release-1.0.990","release-1.0.999")
         println "\n\nFinal report:\n${report}"
     }
 }
