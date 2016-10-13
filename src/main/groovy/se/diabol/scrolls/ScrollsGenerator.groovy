@@ -61,7 +61,7 @@ class ScrollsGenerator {
         out.close();
     }
 
-    def generateReleaseNotes(environment, version1, version2, template, outputfile) {
+    def generateScrolls(environment, version1, version2, templateName, outputFile) {
         def header = [
                 component: config.component,
                 environment: environment ? environment : "",
@@ -144,7 +144,7 @@ class ScrollsGenerator {
 
         try {
             def rnc = new ScrollsGenerator(config:  config)
-            rnc.generateReleaseNotes(environment, version1, version2, template, output)
+            rnc.generateScrolls(environment, version1, version2, template, output)
         } catch (Exception e) {
             println "Failed to create release notes for env ${environment} from version ${version1} to version ${version2}"
             e.printStackTrace()
