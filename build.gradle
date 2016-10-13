@@ -37,7 +37,5 @@ task uberjar(type: Jar, dependsOn:[':compileJava',':compileGroovy']) {
 
 run {
     /* Need to split the space-delimited value in the run.args */
-    if (System.hasProperty('run.args')) {
-        args System.getProperty("run.args").split()
-    }
+    args System.getProperty('run.args', '').split()
 }
