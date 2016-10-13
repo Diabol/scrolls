@@ -1,10 +1,9 @@
-package se.diabol.notifier.releasenotes
+package se.diabol.scrolls
 
 import com.sun.grizzly.http.SelectorThread
 import org.junit.runner.RunWith
 import org.spockframework.runtime.Sputnik
 import spock.lang.Shared
-import se.diabol.notifier.releasenotes.JiraReportGenerator
 
 @RunWith(Sputnik)
 class JiraReportGeneratorTest extends spock.lang.Specification {

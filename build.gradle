@@ -2,35 +2,42 @@ apply plugin: 'groovy'
 apply plugin: 'maven'
 apply plugin: 'application'
 
-group = 'se.diabol.notifier'
-version = '1.0-SNAPSHOT'
+group = 'se.diabol.scrolls'
+version = '0.0.1-SNAPSHOT'
 
-description = """Release Notes Generation"""
+description = """An Automated Delivery Report Engine"""
 
-mainClassName = 'se.diabol.notifier.releasenotes.ReleaseNotesGenerator'
+mainClassName = 'se.diabol.scrolls.ScrollsGenerator'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-    maven { url "http://repo.maven.apache.org/maven2" }
+    jcenter()
 }
 
 dependencies {
-    compile group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.1.9'
-    compile group: 'org.freemarker', name: 'freemarker', version:'2.3.20'
-    compile group: 'org.codehaus.groovy.modules.http-builder', name: 'http-builder', version:'0.6'
-    compile group: 'commons-cli', name: 'commons-cli', version:'1.2'
-    testCompile group: 'junit', name: 'junit', version:'4.7'
-    testCompile group: 'org.spockframework', name: 'spock-core', version:'0.7-groovy-2.0'
-    testCompile group: 'com.sun.grizzly', name: 'grizzly-comet-webserver', version:'1.9.55'
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.4.7'
+    compile group: 'org.freemarker', name: 'freemarker', version:'2.3.23'
+    compile group: 'org.codehaus.groovy.modules.http-builder', name: 'http-builder', version:'0.7.1'
+    compile group: 'commons-cli', name: 'commons-cli', version:'1.3.1'
+    testCompile group: 'junit', name: 'junit', version:'4.12'
+    testCompile group: 'org.spockframework', name: 'spock-core', version:'1.0-groovy-2.4'
+    testCompile group: 'com.sun.grizzly', name: 'grizzly-comet-webserver', version:'1.9.64'
 }
 
-task uberjar(type: Jar,dependsOn:[':compileJava',':compileGroovy']) {
+task uberjar(type: Jar, dependsOn:[':compileJava',':compileGroovy']) {
     from files(sourceSets.main.output.classesDir)
     from configurations.runtime.asFileTree.files.collect { zipTree(it) }
 
     manifest {
         attributes 'Main-Class': mainClassName
+    }
+}
+
+run {
+    /* Need to split the space-delimited value in the run.args */
+    if (System.hasProperty('run.args')) {
+        args System.getProperty("run.args").split()
     }
 }

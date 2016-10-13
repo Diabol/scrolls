@@ -1,8 +1,8 @@
 jiraBaseUrl="https://jira.atlassian.com"
-jiraUsername="notifier"
+jiraUsername="scrolls"
 jiraPassword="password"
 jiraReleaseRequestProjectKey="NOT"
-jiraComponent="Notifier"
+jiraComponent="Scrolls"
 
 repositoryType="git"
 
@@ -19,4 +19,3 @@ changeTypeRegexps = [
         "config": ".*/src/main/resources.*\\.xml",
         "build": ".*/build\\.gradle"
 ]
-

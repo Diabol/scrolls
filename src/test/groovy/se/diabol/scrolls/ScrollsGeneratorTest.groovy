@@ -1,54 +1,53 @@
-package se.diabol.notifier.releasenotes
+package se.diabol.scrolls
 
 import org.junit.runner.RunWith
 import org.spockframework.runtime.Sputnik
+import spock.lang.Specification
+
+import java.nio.charset.StandardCharsets
 
 @RunWith(Sputnik)
-class RunReleaseNotesGeneratorTest extends spock.lang.Specification {
+class ScrollsGeneratorTest extends Specification {
 
-    private PrintStream outBefore;
-    def releaseNotesFilePath = "build/ReleaseNotes.html";
+    private PrintStream outBefore
+    def scrollsOutputFile = "build/Scrolls.html"
 
     def setup() {
-        outBefore = System.out;
+        outBefore = System.out
     }
 
     def cleanup() {
-        System.setOut(outBefore);
+        System.setOut(outBefore)
     }
 
     def "generate html report"() {
         setup: "Remove old release notes"
-        "rm -f ${releaseNotesFilePath}"
+        "rm -f ${scrollsOutputFile}"
 
         when: "generating html report"
-        ReleaseNotesGenerator generator = new ReleaseNotesGenerator();
-        generator.generateHtmlReport(headerDataMock, gitDataMock, jiraDataMock, null, null, null, releaseNotesFilePath);
+        ScrollsGenerator generator = new ScrollsGenerator();
+        generator.generateHtmlReport(headerDataMock, gitDataMock, jiraDataMock, null, scrollsOutputFile);
 
         then: "html report is generated without exceptions"
-        assert "ls ${releaseNotesFilePath}".execute().getText() == "${releaseNotesFilePath}\n"
-        def htmlContent = new File(releaseNotesFilePath).text
+        assert "ls ${scrollsOutputFile}".execute().getText() == "${scrollsOutputFile}\n"
+        def htmlContent = new File(scrollsOutputFile).text
         assert htmlContent.contains("<td class=\"label\" class>New version:</td><td>V2-new</td>")
         assert htmlContent.contains("<p>Total 155 changes by 3 people, total 20 files</p>")
         assert htmlContent.contains("<p>2 Jira issues from 1 stories and 1 epics affected</p>")
     }
 
-    def "no release request should be generated when missing environment arg"() {
+    def 'no scrolls generated when environment or version1 options are missing'() {
+        final ByteArrayOutputStream sout = new ByteArrayOutputStream()
+        System.setOut(new PrintStream(sout))
 
-        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(myOut));
+        //given: 'nothing'
+        when: 'no version1 given'
+        ScrollsGenerator.invokeMethod('main', ['-v2', '1.0.0'].toArray())
 
-        given: "out is a release request in jira"
-
-        when: "no environment argument provided when running rel req gen"
-        ReleaseNotesGenerator.invokeMethod("main", ["-v1","0.0.9","-v2","1.0.0","-o","jira","-s", "chips-helloworld"].toArray())
-
-        then: "something happens"
-        String out = new String(myOut.toByteArray(), "UTF-8");
-        assert out.contains("You must specify environment when creating jira release request")
+        then: "error is returned"
+        String out = sout.toString(StandardCharsets.UTF_8.name())
+        assert out.contains('Either option e (environment) or v1 (version1) must be specified')
     }
-
-
 
     static def headerDataMock = [
             component: "componentA",
@@ -92,5 +91,4 @@ class RunReleaseNotesGeneratorTest extends spock.lang.Specification {
                     stories: []
             ]]
     ]
-
 }
