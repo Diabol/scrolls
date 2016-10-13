@@ -8,7 +8,18 @@ import java.nio.charset.StandardCharsets;
 class ScrollsGenerator {
 
     def config
-    static plugins = new Reflections('se.diabol.scrolls').getSubTypesOf(ScrollsPlugin)
+
+    static Map plugins = [:]
+    static {
+        println "Scanning for plugins..."
+        new Reflections('se.diabol.scrolls').getSubTypesOf(ScrollsPlugin).each {
+            Class<ScrollsPlugin> pluginClass = Class.forName(it.name) as Class<ScrollsPlugin>
+            ScrollsPlugin plugin = pluginClass.getConstructor().newInstance()
+            plugins[plugin.getName()] = plugin
+            println "  ${plugin.getName()} initialized"
+        }
+        println "...plugin scanning done"
+    }
 
     /*
     def getJiraInfo(commitComments) {
@@ -55,15 +66,12 @@ class ScrollsGenerator {
         ]
 
         Map reports
-        plugins.each {
-            Class<ScrollsPlugin> pluginClass = Class.forName(it.name) as Class<ScrollsPlugin>
-            ScrollsPlugin plugin = pluginClass.getConstructor().newInstance()
-
-            def pluginConfig = config.(plugin.getName()) as Map
-            reports[plugin.getName()] = plugin.generate(pluginConfig, oldVersion, newVersion)
+        plugins.each { name, plugin ->
+            def pluginConfig = config.(name) as Map
+            reports[name] = plugin.generate(pluginConfig, oldVersion, newVersion)
         }
 
-        /*
+        /* TODO: Jira report depends on commit log, need to figure out a good way to deal with that
         def repositoryReport = getRepositoryReport(oldVersion, newVersion)
         def jiraReport = null
         if (repositoryReport) {
@@ -113,8 +121,12 @@ class ScrollsGenerator {
 
         if (options && options.help) {
             cli.usage()
-            plugins.each {  // TODO: This needs to use the actual instances...
-                println it.name
+            println "---Plugins---"
+            plugins.each { name, plugin ->
+                println "${name} config"
+                plugin.getConfigInfo().each { item, desc ->
+                    println "  ${item}: ${desc}"
+                }
             }
             return null
         } else {

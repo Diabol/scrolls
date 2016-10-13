@@ -26,7 +26,11 @@ class GitReportGenerator implements ScrollsPlugin {
 
     @Override
     Map getConfigInfo() {
-        return [:]
+        return [git: 'git and commandline options. Default: git --no-pager',
+                repositoryRoot: 'path relative to git repository root. Default: ./',
+                moduleRegexps: 'map of modules and regexps. Defaults to: [default: ".*"]',
+                changeTypeRegexps: 'map types of changes depending on where in the repository they are found. E.g. [api: ".*/api/.*]',
+                logOptions: 'Additional git log options. Default: ""']
     }
 
     def getCommitLog(tag1, tag2){
