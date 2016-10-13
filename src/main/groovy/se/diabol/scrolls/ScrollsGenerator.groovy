@@ -40,10 +40,10 @@ class ScrollsGenerator {
     }
 
     def generateHtmlReport(header, repository, jira, templateName, outputFile) {
-        Configuration cfg = new Configuration();
-        cfg.setClassForTemplateLoading(getClass(),"/");
+        Configuration cfg = new Configuration()
+        cfg.setClassForTemplateLoading(getClass(), "/")
         cfg.defaultEncoding = StandardCharsets.UTF_8.name()
-        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER)
 
         def templateNameToRead = templateName ?: 'scrolls-template.html'
         Template template = cfg.getTemplate(templateNameToRead)
@@ -56,9 +56,11 @@ class ScrollsGenerator {
         if (jira) {
             binding.jira = jira
         }
-        Writer out = new OutputStreamWriter(new FileOutputStream(outputFile));
-        template.process(binding, out);
-        out.close();
+
+        def outFile = new File(outputFile)
+        outFile.withWriter {
+            template.process(binding, it)
+        }
     }
 
     def generateScrolls(environment, version1, version2, templateName, outputFile) {
