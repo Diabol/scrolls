@@ -1,12 +1,14 @@
 package se.diabol.scrolls
 
-import freemarker.template.*;
+import freemarker.template.*
+
+import java.nio.charset.StandardCharsets;
 
 class ScrollsGenerator {
 
     def config
 
-    def getRepositoryInfo(version1, version2) {
+    def getRepositoryReport(version1, version2) {
         def repositoryInfo
         if (config.repositoryType == "git") {
             println "\nUsing GitReportGenerator..."
@@ -19,26 +21,6 @@ class ScrollsGenerator {
             throw new IllegalArgumentException("Unsupported repository type: ${config.repositoryType}")
         }
         return repositoryInfo
-    }
-
-    def getLinkedJiraIssues(jiraInfo) {
-        def linkedIssues = []
-
-        if (!jiraInfo) {
-            return linkedIssues
-        }
-
-        jiraInfo.issues.each { issue->
-            if ("Epic".equals(issue.type)) {
-                issue.stories.each { story->
-                    linkedIssues.add(story.key)
-                }
-            } else {
-                linkedIssues.add(issue.key)
-            }
-        }
-
-        return linkedIssues
     }
 
     def getJiraInfo(commitComments) {
@@ -54,145 +36,120 @@ class ScrollsGenerator {
             excludeClosedIssues: config.omitClosed
         )
 
-        def jiraInfo = jr.createJiraReport(commitComments)
-        return jiraInfo
+        return jr.createJiraReport(commitComments)
     }
 
-    def generateHtmlReport(header, svn, jira, tests, sonar, template, outputfile) {
+    def generateHtmlReport(header, repository, jira, templateName, outputFile) {
         Configuration cfg = new Configuration();
         cfg.setClassForTemplateLoading(getClass(),"/");
-        cfg.setDefaultEncoding("UTF-8");
+        cfg.defaultEncoding = StandardCharsets.UTF_8.name()
         cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-        Template temp;
-        if (template!=null) {
-            temp = cfg.getTemplate(template);
-        } else {
-            temp = cfg.getTemplate("scrolls-template.html");
-        }
-        println "Read template ${template}: "+ (temp ? "ok" : "not ok")
+
+        def templateNameToRead = templateName ?: 'scrolls-template.html'
+        Template template = cfg.getTemplate(templateNameToRead)
+
+        println "Read template ${templateName}: " + (template ? "ok" : "not ok")
         Map binding = [header: header]
-        if (svn!=null) binding.repository = svn
-        if (jira!=null) binding.jira = jira
-        if (tests!=null) binding.tests = tests
-        if (sonar!=null) binding.sonar = sonar
-        Writer out = new OutputStreamWriter(new FileOutputStream(outputfile));
-        temp.process(binding, out);
+        if (repository) {
+            binding.repository = repository
+        }
+        if (jira) {
+            binding.jira = jira
+        }
+        Writer out = new OutputStreamWriter(new FileOutputStream(outputFile));
+        template.process(binding, out);
         out.close();
     }
 
-    def generateReleaseNotes(environment, remote, version1, version2, template, outputfile, user, service) {
+    def generateReleaseNotes(environment, version1, version2, template, outputfile) {
         def header = [
                 component: config.component,
-                environment: environment? environment : "",
+                environment: environment ? environment : "",
                 date: new Date().format("yyyy-MM-dd HH:mm:ss"),
                 oldVersion: version1,
                 newVersion: version2,
                 jenkinsUrl: config.jenkinsUrl? config.jenkinsUrl : ""
         ]
 
-        def repoInfo = getRepositoryInfo(version1, version2)
+        def repositoryReport = getRepositoryReport(version1, version2)
+        def jiraReport = null
+        if (repositoryReport) {
+            println "\nRepository report:\n\n${repositoryReport}\n\n"
+            println "\n*** Commits: " + repositoryReport.commits
 
-        def jiraInfo
-        if (repoInfo != null) {
-            println "\nRepository report:\n\n${repoInfo}\n\n"
-            println "\n*** Commits: " + repoInfo.commits
-
-            jiraInfo = getJiraInfo(repoInfo.commits)
-            println "\n*** JiraInfo: " + jiraInfo
+            jiraReport = getJiraInfo(repositoryReport.commits)
+            println "\n*** JiraInfo: " + jiraReport
         }
 
         def watchers = []
 
-        repoInfo?.commits.each { commit ->
-          if ("git".equals(config.repositoryType)) {
-             watchers.add(commit.email)
-             println("Added: ${commit.email} to watchers list")
-          } else {
-             watchers.add(commit.author)
-             println("Added: ${commit.author} to watchers list")
-          }
+        repositoryReport?.commits?.each { commit ->
+            if ("git" == config.repositoryType) {
+                watchers.add(commit.email)
+                println("Added: ${commit.email} to watchers list")
+            } else {
+                watchers.add(commit.author)
+                println("Added: ${commit.author} to watchers list")
+            }
         }
-        generateHtmlReport(header, repoInfo, jiraInfo, null, null, template, outputfile)
+        generateHtmlReport(header, repositoryReport, jiraReport, templateName, outputFile)
     }
 
     static void main(String[] args) {
         def cli = new CliBuilder()
-        cli.h( longOpt: 'help', required: false, 'show usage information' )
-        cli.e( longOpt: 'environment', argName: 'environment', required: false, args: 1, 'The environment to check version against')
-        cli.v1( longOpt: 'version1', argName: 'version1', required: false, args: 1, 'If no environment is specified this is the version to compare with' )
-        cli.v2( longOpt: 'version2', argName: 'version2', required: true, args: 1, 'The second version to compare with')
-        cli.r( longOpt: 'repositoryRoot', argName: 'repositoryRoot', required: false, args: 1, 'Git repositories root dir here to find all components [./]')
-        cli.c( longOpt: 'configPath', argName: 'configPath', required: false, args: 1, 'Path to configPath file')
-        cli.o( longOpt: 'output', argName: 'fileName', required: false, args: 1, 'Output file name [./Scrolls.html]')
-        cli.f( longOpt: 'failsafe',  required: false, 'Should script fail on errors? [false]' )
-        cli.t( longOpt: 'template',  required: false, args: 1, 'Path to FreeMarker html template [./]' )
-        cli.u( longOpt: 'user',  required: false, args: 1, 'Current user []' )
-        cli.z( longOpt: 'remote',  required: false, args: 1, 'If set, perform a remote scm log when collecting log information. Otherwise operate on the local directory []' )
-        cli.oc( longOpt: 'omitClosed',  required: false, 'Omit closed issues when linking commits? [true]' )
-        cli.s( longOpt: 'service', argName: 'service', required: true, args: 1, 'The service being deployed')
-        cli.os( longOpt: 'omitSonar',  required: false, 'Omit sonar metrics from report? [false]' )
-        cli.opt( longOpt: 'options',  required: false, args: 1, 'Logging option params for git log' )
+        cli.h(longOpt: 'help', required: false, 'show usage information')
+        cli.e(longOpt: 'environment', argName: 'environment', required: false, args: 1, 'The environment to check version against')
+        cli.v1(longOpt: 'version1', argName: 'version1', required: false, args: 1, 'If no environment is specified this is the version to compare with')
+        cli.v2(longOpt: 'version2', argName: 'version2', required: true, args: 1, 'The second version to compare with')
+        cli.r(longOpt: 'repositoryRoot', argName: 'repositoryRoot', required: false, args: 1, 'Git repositories root dir here to find all components [./]')
+        cli.c(longOpt: 'configPath', argName: 'configPath', required: false, args: 1, 'Path to configPath file')
+        cli.o(longOpt: 'output', argName: 'fileName', required: false, args: 1, 'Output file name [./Scrolls.html]')
+        cli.f(longOpt: 'failsafe',  required: false, 'Should script fail on errors? [false]')
+        cli.t(longOpt: 'template',  required: false, args: 1, 'Path to FreeMarker html template [./]')
+        cli.oc(longOpt: 'omitClosed',  required: false, 'Omit closed issues when linking commits? [true]')
+        cli.opt(longOpt: 'options',  required: false, args: 1, 'Logging option params for git log')
 
         def opt = cli.parse(args)
         if (!opt) { return }
-        if (opt.h) {
+        if (opt.help) {
             cli.usage();
             return
         }
 
-        def env = opt.e.equals("--") ? null : opt.e
-        def version1 = opt.v1.equals("--") ? null : opt.v1
-        def version2 = opt.v2
-        def reposRoot = opt.r
-        def configPath = opt.c
-        def out = opt.o ? opt.o : "Scrolls.html"
-        def template = opt.t ? opt.t : null
-        boolean failsafe = opt.f
-        def user = opt.u
-        def remote = opt.z
-        def service = opt.s
+        def environment = opt.environment == "--" ? null : opt.environment
+        def version1 = opt.version1 == "--" ? null : opt.version1
+        def version2 = opt.version2
+        def configPath = opt.'configPath'
+        def output = opt.output ?: "Scrolls.html"
+        def template = opt.template ?: null
+        boolean failsafe = opt.failsafe
 
-        def configUrl = configPath? new File(configPath).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
+        def configUrl = configPath ? new File(configPath).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
 
         println "Reading config from: ${configUrl}"
         def config = new ConfigSlurper().parse(configUrl)
 
-        if (opt.oc) {
-            config.put('omitClosed', true)
-        } else {
-            config.put('omitClosed', false)
-        }
-
-        if (opt.os) {
-            config.put('omitSonar', true)
-        } else {
-            config.put('omitSonar', false)
-        }
+        config.put('omitClosed', opt.oc)
 
         if (opt.opt) {
             config.put('logOptions', opt.opt)
         } else {
-            config.put('logOptions', "")
+            config.put('logOptions', '')
         }
 
-        if (!(env || version1)) {
+        if (!(environment || version1)) {
             println "Either option e (environment) or v1 (version1) must be specified"
-            return
-        }
-
-        if (out =='jira' && !env) {
-            println( "You must specify environment when creating jira release request" )
             return
         }
 
         try {
             def rnc = new ScrollsGenerator(config:  config)
-            rnc.generateReleaseNotes(env, remote, version1, version2, template, out, user, service)
+            rnc.generateReleaseNotes(environment, version1, version2, template, output)
         } catch (Exception e) {
-            println "Failed to create release notes for env ${env} from version ${version1} to version ${version2} with remote ${remote}"
+            println "Failed to create release notes for env ${environment} from version ${version1} to version ${version2}"
             e.printStackTrace()
-            new File(out).withPrintWriter {writer ->
-                writer.println "Failed to create release notes for env ${env} from version ${version1} to version ${version2} with remote ${remote}"
+            new File(output).withPrintWriter {writer ->
+                writer.println "Failed to create release notes for env ${environment} from version ${version1} to version ${version2} with remote ${remote}"
                 e.printStackTrace(writer)
             }
             if (!failsafe) {
