@@ -97,66 +97,52 @@ class ScrollsGenerator {
         generateHtmlReport(header, repositoryReport, jiraReport, templateName, outputFile)
     }
 
-    static void main(String[] args) {
+    static OptionAccessor parseOptions(String[] args) {
         def cli = new CliBuilder()
         cli.h(longOpt: 'help', required: false, 'show usage information')
-        cli.e(longOpt: 'environment', argName: 'environment', required: false, args: 1, 'The environment to check version against')
-        cli.v1(longOpt: 'version1', argName: 'version1', required: false, args: 1, 'If no environment is specified this is the version to compare with')
-        cli.v2(longOpt: 'version2', argName: 'version2', required: true, args: 1, 'The second version to compare with')
-        cli.r(longOpt: 'repositoryRoot', argName: 'repositoryRoot', required: false, args: 1, 'Git repositories root dir here to find all components [./]')
-        cli.c(longOpt: 'configPath', argName: 'configPath', required: false, args: 1, 'Path to configPath file')
-        cli.o(longOpt: 'output', argName: 'fileName', required: false, args: 1, 'Output file name [./Scrolls.html]')
-        cli.f(longOpt: 'failsafe',  required: false, 'Should script fail on errors? [false]')
-        cli.t(longOpt: 'template',  required: false, args: 1, 'Path to FreeMarker html template [./]')
-        cli.oc(longOpt: 'omitClosed',  required: false, 'Omit closed issues when linking commits? [true]')
-        cli.opt(longOpt: 'options',  required: false, args: 1, 'Logging option params for git log')
+        cli._(longOpt: 'old-version', argName: 'oldVersion', required: true, args: 1, 'The old version to compare with')
+        cli._(longOpt: 'new-version', argName: 'newVersion', required: true, args: 1, 'The new version to compare with')
+        cli.c(longOpt: 'config', required: false, args: 1, 'Path to config file')
+        cli.o(longOpt: 'output', required: false, args: 1, 'Output file name [./Scrolls.html]')
 
-        def opt = cli.parse(args)
-        if (!opt) { return }
-        if (opt.help) {
-            cli.usage();
+        def options = cli.parse(args)
+        if (!options) {
+            return
+        }
+        if (options.help) {
+            cli.usage()
+        }
+
+        return options
+    }
+
+    static void main(String[] args) {
+        def options = parseOptions(args)
+        if (!options) {
             return
         }
 
-        def environment = opt.environment == "--" ? null : opt.environment
-        def version1 = opt.version1 == "--" ? null : opt.version1
-        def version2 = opt.version2
-        def configPath = opt.'configPath'
-        def output = opt.output ?: "Scrolls.html"
-        def template = opt.template ?: null
-        boolean failsafe = opt.failsafe
-
-        def configUrl = configPath ? new File(configPath).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
-
-        println "Reading config from: ${configUrl}"
-        def config = new ConfigSlurper().parse(configUrl)
-
-        config.put('omitClosed', opt.oc)
-
-        if (opt.opt) {
-            config.put('logOptions', opt.opt)
-        } else {
-            config.put('logOptions', '')
-        }
-
-        if (!(environment || version1)) {
-            println "Either option e (environment) or v1 (version1) must be specified"
-            return
-        }
+        String output = options.output ?: "Scrolls.html"
+        def config = readConfig(options.config)
 
         try {
             def rnc = new ScrollsGenerator(config:  config)
-            rnc.generateScrolls(environment, version1, version2, template, output)
+            rnc.generateScrolls(options.oldVersion, options.newVersion, output)
         } catch (Exception e) {
-            println "Failed to create release notes for env ${environment} from version ${version1} to version ${version2}"
+            def msg = "Failed to create release notes for versions ${options.oldVersion} to ${options.newVersion}"
+            println msg
             e.printStackTrace()
             new File(output).withPrintWriter {writer ->
-                writer.println "Failed to create release notes for env ${environment} from version ${version1} to version ${version2} with remote ${remote}"
+                writer.println msg
                 e.printStackTrace(writer)
             }
-            if (!failsafe) {
-                System.exit(1)
-            }
         }
+    }
+
+    static readConfig(config) {
+        def path = config ? new File(config).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
+
+        println "Reading configuration from: ${path}"
+        return new ConfigSlurper().parse(path)
     }
 }

@@ -46,7 +46,7 @@ class ScrollsGeneratorTest extends Specification {
 
         then: "error is returned"
         String out = sout.toString(StandardCharsets.UTF_8.name())
-        assert out.contains('Either option e (environment) or v1 (version1) must be specified')
+        assert out.contains('error: Missing required options: old-version, new-version')
     }
 
     static def headerDataMock = [

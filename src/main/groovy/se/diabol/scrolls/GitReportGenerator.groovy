@@ -1,20 +1,44 @@
 package se.diabol.scrolls
 
-class GitReportGenerator extends AbstractReportGenerator {
+class GitReportGenerator implements ScrollsPlugin {
 
     def git = "git --no-pager"
     def repositoryRoot = "./"
     def modulesRegexps = ["default": ".*"]
     def changeTypeRegexps = [:]
+    def logOptions = ''
 
-    def getCommitLog(tag1,tag2, gitLogOptions){
+    @Override
+    Map generate(String oldVersion, String newVersion) {
+        // TODO: How to handle input, has to come from options/config?!?
+        // TODO: When plugin class is created options are set through the constructor
+        // TODO: Or, assume a specific method will always take two params (oldVersion, newVersion) and it's up to the plugin
+        // TODO: to handle the rest, albeit the rest can come from configuration?!?
+        // TODO: gitLogOptions?
+        def commits = []
+        def commitLog = getCommitLog(oldVersion, newVersion)
+        commitLog.each {c ->
+            commits.add(getCommitDetails(c.key))
+        }
+        def summary = calcSummary(commits)
+        def modules = parseModules(commits)
+
+        return [summary: summary, modules: modules, commits: commits]
+    }
+
+    @Override
+    String getName() {
+        return 'git'
+    }
+
+    def getCommitLog(tag1, tag2){
         println "Running git log on ${repositoryRoot}"
         def command
 
         if (tag1.isInteger() && (tag1.toInteger() == 0)) {
-            command = "${git} log --pretty=oneline ${gitLogOptions} ${tag2}"
+            command = "${git} log --pretty=oneline ${logOptions} ${tag2}"
         } else {
-            command = "${git} log --pretty=oneline ${gitLogOptions} ${tag1}..${tag2}"
+            command = "${git} log --pretty=oneline ${logOptions} ${tag1}..${tag2}"
         }
 
         def result = execCommand(command, repositoryRoot)
@@ -117,27 +141,30 @@ class GitReportGenerator extends AbstractReportGenerator {
         return modules.values()
     }
 
-    def createReport(tag1,tag2, gitLogOptions) {
-        def commits = []
-        def commitLog = getCommitLog(tag1,tag2, gitLogOptions)
-        commitLog.each {c ->
-            commits.add(getCommitDetails(c.key))
+    static def execCommand(String command, String workingDirectory='.') {
+        println "execCommand(${command},${workingDirectory})"
+        def proc = command.execute(null, new File(workingDirectory))
+        def sout = new StringBuffer()
+        def serr = new StringBuffer()
+        proc.consumeProcessOutput(sout,serr)
+        proc.waitFor()
+        if (proc.exitValue() != 0) {
+            println "Failed to execute command: ${command}"
+            println serr
+            println sout
+            throw new Exception("Failed to Execute command: ${command} : ${serr.toString()}")
         }
-        def summary = calcSummary(commits)
-        //println "Commits:\n${commits}"
-        def modules = parseModules(commits)
-
-        return [summary: summary, modules: modules, commits: commits]
+        return [status  : proc.exitValue(), stdout: sout, stderr: serr]
     }
 
     public static void main(String[] args) {
         GitReportGenerator grg = new GitReportGenerator(
-            repositoryRoot: "./",
-             modulesRegexps: ["eb": "^web/.*"],
-             changeTypeRegexps: ["javascript": ".*/javascript/.*\\.js"]
-
+                repositoryRoot: "./",
+                modulesRegexps: ["eb": "^web/.*"],
+                changeTypeRegexps: ["javascript": ".*/javascript/.*\\.js"]
         )
-        def report = grg.createReport("release-1.0.990","release-1.0.999", "")
+
+        def report = grg.generate("release-1.0.990","release-1.0.999")
         println "\n\nFinal report:\n${report}"
     }
 }
