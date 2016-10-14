@@ -1,5 +1,9 @@
 package se.diabol.scrolls
 
+import freemarker.cache.ClassTemplateLoader
+import freemarker.cache.FileTemplateLoader
+import freemarker.cache.MultiTemplateLoader
+import freemarker.cache.TemplateLoader
 import freemarker.template.*
 import org.reflections.Reflections
 
@@ -8,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 class ScrollsGenerator {
 
     def config
+    def freemarkerConfig
 
     static Map plugins = [:]
     static {
@@ -21,32 +26,38 @@ class ScrollsGenerator {
         println "...plugin scanning done"
     }
 
-    /*
-    def getJiraInfo(commitComments) {
-        JiraReportGenerator jr = new JiraReportGenerator(
-            baseUrl: config.jiraBaseUrl,
-            username: config.jiraUsername,
-            password: config.jiraPassword,
-            iconEpic: config.iconEpic,
-            iconBug: config.iconBug,
-            iconStory: config.iconStory,
-            iconTask: config.iconTask,
-            iconFeature: config.iconFeature,
-            excludeClosedIssues: config.omitClosed
-        )
-
-        return jr.createJiraReport(commitComments)
+    ScrollsGenerator(config) {
+        this.config = config
+        this.freemarkerConfig = initializeFreemarker(config)
     }
-    */
+
+    /**
+     * Initialize FreeMarker with support for loading templates from both path (when set with --templates option) and
+     * classpath resource (which is the default)
+     *
+     * @param config
+     * @return
+     */
+    private Configuration initializeFreemarker(config) {
+        Configuration freemarkerConfig = new Configuration()
+        freemarkerConfig.defaultEncoding = StandardCharsets.UTF_8.name()
+        freemarkerConfig.templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
+
+        if (config.templates) {
+            TemplateLoader[] loaders = new TemplateLoader[2]
+            loaders[0] = new FileTemplateLoader(new File(config.templates as String))
+            loaders[1] = new ClassTemplateLoader(getClass(), '/')
+            freemarkerConfig.setTemplateLoader(new MultiTemplateLoader(loaders))
+        } else {
+            freemarkerConfig.setClassForTemplateLoading(getClass(), '/')
+        }
+
+        return freemarkerConfig
+    }
 
     def generateHtmlReport(Map header, Map reports, String outputFile) {
-        Configuration cfg = new Configuration()
-        cfg.setClassForTemplateLoading(getClass(), "/")
-        cfg.defaultEncoding = StandardCharsets.UTF_8.name()
-        cfg.templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
-
-        def templateNameToRead = config.templateName ?: 'scrolls-template.html'
-        Template template = cfg.getTemplate(templateNameToRead)
+        def templateNameToRead = config.scrolls.templateName ?: 'scrolls-html.ftl'
+        Template template = freemarkerConfig.getTemplate(templateNameToRead)
 
         println "Read template ${templateNameToRead}: " + (template ? "ok" : "not ok")
         Map binding = [header: header]
@@ -57,17 +68,17 @@ class ScrollsGenerator {
         }
     }
 
-    def generateScrolls(String oldVersion, String newVersion, String outputFile) {
+    def generate(String oldVersion, String newVersion, String outputFile) {
         Map header = [
-                component: config.component,
+                component: config.scrolls.component,
                 date: new Date().format("yyyy-MM-dd HH:mm:ss"),
                 oldVersion: oldVersion,
                 newVersion: newVersion,
         ]
 
-        Map reports
+        Map reports = [:]
         plugins.each { name, plugin ->
-            def pluginConfig = config.(name) as Map
+            def pluginConfig = config."${name}" as Map
             reports[name] = plugin.generate(pluginConfig, oldVersion, newVersion)
         }
 
@@ -78,7 +89,19 @@ class ScrollsGenerator {
             println "\nRepository report:\n\n${repositoryReport}\n\n"
             println "\n*** Commits: " + repositoryReport.commits
 
-            jiraReport = getJiraInfo(repositoryReport.commits)
+            JiraReportGenerator jr = new JiraReportGenerator(
+                baseUrl: config.jiraBaseUrl,
+                username: config.jiraUsername,
+                password: config.jiraPassword,
+                iconEpic: config.iconEpic,
+                iconBug: config.iconBug,
+                iconStory: config.iconStory,
+                iconTask: config.iconTask,
+                iconFeature: config.iconFeature,
+                excludeClosedIssues: config.omitClosed
+            )
+
+            jiraReport = jr.createJiraReport(repositoryReport.commits)
             println "\n*** JiraInfo: " + jiraReport
         }*/
 
@@ -95,8 +118,8 @@ class ScrollsGenerator {
         def config = readConfig(options.config)
 
         try {
-            def rnc = new ScrollsGenerator(config:  config)
-            rnc.generateScrolls(options.'old-version' as String, options.'new-version' as String, output)
+            def scrollsGenerator = new ScrollsGenerator(config)
+            scrollsGenerator.generate(options.'old-version' as String, options.'new-version' as String, output)
         } catch (Exception e) {
             def msg = "Failed to create scrolls for versions ${options.'old-version'} to ${options.'new-version'}"
             println msg
@@ -113,9 +136,10 @@ class ScrollsGenerator {
         cli._(longOpt: 'old-version', required: true, args: 1, 'The old version to compare with')
         cli._(longOpt: 'new-version', required: true, args: 1, 'The new version to compare with')
 
-        cli.h(longOpt: 'help', required: false, 'show usage information')
-        cli.c(longOpt: 'config', required: false, args: 1, 'Path to config file')
-        cli.o(longOpt: 'output', required: false, args: 1, 'Output file name [./Scrolls.html]')
+        cli.h(longOpt: 'help', 'show usage information')
+        cli.c(longOpt: 'config', args: 1, 'Path to config file')
+        cli.o(longOpt: 'output', args: 1, 'Output file name [./Scrolls.html]')
+        cli.t(longOpt: 'templates', args: 1, 'Override default templates from this directory')
 
         def options = cli.parse(args)
 
@@ -134,10 +158,10 @@ class ScrollsGenerator {
         }
     }
 
-    static readConfig(def config) {
-        def path
-        if (config) {
-            path = new File(config).toURI().toURL()
+    static readConfig(fileName) {
+        URL path
+        if (fileName) {
+            path = new File(fileName).toURI().toURL()
         } else {
             path = ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
         }

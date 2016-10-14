@@ -38,8 +38,8 @@
         <!-- Repository section  -->
             <div>
                 <h2>Change Summary</h2>
-                <#if repository??>
-                <p>Total ${repository.summary.nbrOfChanges} changes by ${repository.summary.nbrOfPeople} people, total ${repository.summary.nbrOfFiles} files</p>
+                <#if reports.git??>
+                <p>Total ${reports.git.summary.nbrOfChanges} changes by ${reports.git.summary.nbrOfPeople} people, total ${reports.git.summary.nbrOfFiles} files</p>
                 <table id="changes">
                     <thead>
                         <tr>
@@ -50,7 +50,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                    <#list repository.modules as m>
+                    <#list reports.git.modules as m>
                         <tr>
                             <td>${m.name}</td>
                             <td>${m.nbrOfChanges}</td>
@@ -72,16 +72,16 @@
              <div>
                 <h2>Change Log</h2>
                 <div id="commitLog">
-                    <#list repository.commits as c>
+                    <#list reports.git.commits as c>
                     <div class="commit" id="${c.rev}">
                         <div class="commitHeader">
 
-                            <a class="commitId" href="#" alt="link to code browser">${c.rev}</a>
+                            <a class="commitId" href="#">${c.rev}</a>
                             <span class="commitDate">${c.date?string("yyyy-MM-dd HH:mm:ss")}</span>
                             <span class="commitAuthor">${c.author}</span>
                         </div>
                         <div class="commitMessage">
-                            ${c.message} <a href="#" onclick="toggleVisibility('${c.rev}-details')">[${c.nbrOfFiles} files]</a>
+                            ${c.message} <a href="#" onclick="toggleVisibility('${c.rev}-details')">[${c.files?size} files]</a>
                         </div>
                         <div class="commitDetails hide" id="${c.rev}-details">
                             <ul>
