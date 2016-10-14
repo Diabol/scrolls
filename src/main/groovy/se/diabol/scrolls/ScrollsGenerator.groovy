@@ -26,9 +26,9 @@ class ScrollsGenerator {
         println "...plugin scanning done"
     }
 
-    ScrollsGenerator(config) {
+    ScrollsGenerator(config, options) {
         this.config = config
-        this.freemarkerConfig = initializeFreemarker(config)
+        this.freemarkerConfig = initializeFreemarker(options.templates)
     }
 
     /**
@@ -38,14 +38,14 @@ class ScrollsGenerator {
      * @param config
      * @return
      */
-    private Configuration initializeFreemarker(config) {
+    private Configuration initializeFreemarker(templates) {
         Configuration freemarkerConfig = new Configuration()
         freemarkerConfig.defaultEncoding = StandardCharsets.UTF_8.name()
         freemarkerConfig.templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
 
-        if (config.templates) {
+        if (templates) {
             TemplateLoader[] loaders = new TemplateLoader[2]
-            loaders[0] = new FileTemplateLoader(new File(config.templates as String))
+            loaders[0] = new FileTemplateLoader(new File(templates as String))
             loaders[1] = new ClassTemplateLoader(getClass(), '/')
             freemarkerConfig.setTemplateLoader(new MultiTemplateLoader(loaders))
         } else {
@@ -60,8 +60,7 @@ class ScrollsGenerator {
         Template template = freemarkerConfig.getTemplate(templateNameToRead)
 
         println "Read template ${templateNameToRead}: " + (template ? "ok" : "not ok")
-        Map binding = [header: header]
-        binding.reports = reports
+        Map binding = [header: header, reports: reports]
 
         new File(outputFile).withWriter {
             template.process(binding, it)
@@ -118,7 +117,7 @@ class ScrollsGenerator {
         def config = readConfig(options.config)
 
         try {
-            def scrollsGenerator = new ScrollsGenerator(config)
+            def scrollsGenerator = new ScrollsGenerator(config, options)
             scrollsGenerator.generate(options.'old-version' as String, options.'new-version' as String, output)
         } catch (Exception e) {
             def msg = "Failed to create scrolls for versions ${options.'old-version'} to ${options.'new-version'}"
