@@ -1,5 +1,5 @@
 scrolls {
-
+    component = "scrolls"
 }
 
 git {
