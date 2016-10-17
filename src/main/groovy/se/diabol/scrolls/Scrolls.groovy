@@ -25,7 +25,7 @@ class Scrolls {
         def config = readConfig(options.config)
 
         try {
-            def scrollsGenerator = new ScrollsGenerator(config, options)
+            def scrollsGenerator = new ScrollsGenerator(config, options, plugins)
             scrollsGenerator.generate(options.'old-version' as String, options.'new-version' as String, output)
         } catch (Exception e) {
             def msg = "Failed to create scrolls for versions ${options.'old-version'} to ${options.'new-version'}"
@@ -76,5 +76,4 @@ class Scrolls {
         println "Reading configuration from: ${path}"
         return new ConfigSlurper().parse(path)
     }
-
 }
