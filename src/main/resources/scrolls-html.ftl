@@ -34,11 +34,12 @@
     </table>
 </div>
 
-    <#list reports as name, report>
-    <div class="plugin-report">
-        <#include "${name}.ftl">
-    </div>
-    </#list>
+<#list reports as name, report>
+<div class="plugin-report">
+    <#include "${name}.ftl">
+</div>
+</#list>
+
 </body>
 </#escape>
 </html>
