@@ -1,6 +1,6 @@
 package se.diabol.scrolls
 
-class GitReportGenerator implements ScrollsPlugin {
+class GitPlugin implements ScrollsPlugin {
 
     def config
 
@@ -29,8 +29,7 @@ class GitReportGenerator implements ScrollsPlugin {
         return [git: 'git and commandline options. Default: git --no-pager',
                 repositoryRoot: 'path relative to git repository root. Default: ./',
                 moduleRegexps: 'map of modules and regexps. Defaults to: [default: ".*"]',
-                changeTypeRegexps: 'map types of changes depending on where in the repository they are found. E.g. [api: ".*/api/.*]',
-                logOptions: 'Additional git log options. Default: ""']
+                changeTypeRegexps: 'map types of changes depending on where in the repository they are found. E.g. [api: ".*/api/.*]']
     }
 
     def getCommitLog(tag1, tag2){
@@ -38,9 +37,9 @@ class GitReportGenerator implements ScrollsPlugin {
         def command
 
         if (tag1.isInteger() && (tag1.toInteger() == 0)) {
-            command = "${config.git} log --pretty=oneline ${config.logOptions} ${tag2}"
+            command = "${config.git} log --pretty=oneline ${tag2}"
         } else {
-            command = "${config.git} log --pretty=oneline ${config.logOptions} ${tag1}..${tag2}"
+            command = "${config.git} log --pretty=oneline ${tag1}..${tag2}"
         }
 
         def result = execCommand(command, config.repositoryRoot)
@@ -160,7 +159,7 @@ class GitReportGenerator implements ScrollsPlugin {
     }
 
     public static void main(String[] args) {
-        GitReportGenerator grg = new GitReportGenerator()
+        GitPlugin grg = new GitPlugin()
         def config = [
                 repositoryRoot: "./",
                 modulesRegexps: ["eb": "^web/.*"],

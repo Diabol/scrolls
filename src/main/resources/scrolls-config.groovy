@@ -17,7 +17,6 @@ git {
             "config": ".*/src/main/resources.*\\.xml",
             "build": ".*/build\\.gradle"
     ]
-    logOptions = ''
 }
 
 jira {
