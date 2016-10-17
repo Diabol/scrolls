@@ -7,34 +7,29 @@ class ScrollsGeneratorTest extends Specification {
     def scrollsOutputFile = "build/Scrolls.html"
 
     def "generate html report"() {
-        setup: "Remove old release notes"
+        given: "Remove old release notes"
         "rm -f ${scrollsOutputFile}"
 
         when: "generating html report"
-        ScrollsGenerator generator = new ScrollsGenerator([], [], []);
-        generator.generateHtmlReport(headerDataMock, reportsMock, scrollsOutputFile);
+        ScrollsGenerator generator = new ScrollsGenerator([], [templates: false], []);
+        generator.generateHtmlReport(headerDataMock, [git: gitDataMock, jira: jiraDataMock], scrollsOutputFile);
 
         then: "html report is generated without exceptions"
-        assert "ls ${scrollsOutputFile}".execute().getText() == "${scrollsOutputFile}\n"
+        "ls ${scrollsOutputFile}".execute().getText() == "${scrollsOutputFile}\n"
         def htmlContent = new File(scrollsOutputFile).text
-        assert htmlContent.contains("<td class=\"label\" class>New version:</td><td>V2-new</td>")
-        assert htmlContent.contains("<p>Total 155 changes by 3 people, total 20 files</p>")
-        assert htmlContent.contains("<p>2 Jira issues from 1 stories and 1 epics affected</p>")
+        htmlContent.contains("<td class=\"label\">New version:</td><td>V2-new</td>")
+        htmlContent.contains("<p>Total 155 changes by 3 people, total 20 files</p>")
+        htmlContent.contains("<p>2 Jira issues from 1 stories and 1 epics affected</p>")
     }
 
-    static def headerDataMock = [
+    def headerDataMock = [
             component: "componentA",
             date: new Date().format("yyyy-MM-dd HH:mm:ss"),
             oldVersion: "V1-old",
             newVersion: "V2-new",
     ]
 
-    static def reportsMock = [
-            git: gitDataMock,
-            jira: jiraDataMock
-    ]
-
-    static def gitDataMock = [
+    def gitDataMock = [
             summary: [
                     nbrOfChanges: 155,
                     nbrOfPeople: 3,
@@ -51,7 +46,7 @@ class ScrollsGeneratorTest extends Specification {
             ]]
     ]
 
-    static def jiraDataMock = [
+    def jiraDataMock = [
             summary: [
                     nbrOfIssues: 2,
                     nbrOfStories: 1,
