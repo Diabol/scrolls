@@ -5,8 +5,9 @@ class GitPlugin implements ScrollsPlugin {
     def config
 
     @Override
-    Map generate(Map config, String oldVersion, String newVersion) {
-        this.config = config // TODO: This became a bit ugly... would work if the name method was static...
+    Map generate(Map input) {
+        String oldVersion = input.'old'
+        String newVersion = input.'new'
 
         def commits = []
         def commitLog = getCommitLog(oldVersion, newVersion)
@@ -42,7 +43,7 @@ class GitPlugin implements ScrollsPlugin {
             command = "${config.git} log --pretty=oneline ${tag1}..${tag2}"
         }
 
-        def result = execCommand(command, config.repositoryRoot)
+        def result = execCommand(command, config.repositoryRoot as String)
         def commits = [] as HashMap
         result.stdout.eachLine { l ->
             def match = l =~ /^([a-z0-9]*) (.*)$/
@@ -55,7 +56,7 @@ class GitPlugin implements ScrollsPlugin {
     }
 
     def getCommitDetails(id) {
-        def result = execCommand("${config.git} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", config.repositoryRoot)
+        def result = execCommand("${config.git} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", config.repositoryRoot as String)
         //println "Found git commit details for [${id}]:\n${result.stdout}"
         def commitDetails = [] as HashMap
         boolean headerDone = false;
@@ -144,7 +145,7 @@ class GitPlugin implements ScrollsPlugin {
 
     static def execCommand(String command, String workingDirectory='.') {
         println "execCommand(${command},${workingDirectory})"
-        def proc = command.execute(null, new File(workingDirectory))
+        def proc = command.execute(null as String[], new File(workingDirectory))
         def sout = new StringBuffer()
         def serr = new StringBuffer()
         proc.consumeProcessOutput(sout,serr)
@@ -156,17 +157,5 @@ class GitPlugin implements ScrollsPlugin {
             throw new Exception("Failed to Execute command: ${command} : ${serr.toString()}")
         }
         return [status  : proc.exitValue(), stdout: sout, stderr: serr]
-    }
-
-    public static void main(String[] args) {
-        GitPlugin grg = new GitPlugin()
-        def config = [
-                repositoryRoot: "./",
-                modulesRegexps: ["eb": "^web/.*"],
-                changeTypeRegexps: ["javascript": ".*/javascript/.*\\.js"]
-        ]
-
-        def report = grg.generate(config, "release-1.0.990","release-1.0.999")
-        println "\n\nFinal report:\n${report}"
     }
 }

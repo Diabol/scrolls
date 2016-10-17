@@ -64,12 +64,56 @@ class ScrollsGenerator {
                 newVersion: newVersion,
         ]
 
+        Map versions = [old: oldVersion, new: newVersion]
         Map reports = [:]
-        plugins.each { name, plugin ->
-            def pluginConfig = config."${name}" as Map
-            reports[name] = plugin.generate(pluginConfig, oldVersion, newVersion)
+        Map executions = buildExecutionMap()
+
+        // Run the plugins that require versions (and make sure we drop them from further execution)
+        executions.remove('versions').each {
+            reports[it.name] = it.plugin.generate(versions)
+        }
+
+        // TODO: Replace hackish loopCounter with topological sorting of dependencies (with cycle detection before running!)
+        int loopCounter = 0
+        while (executions.keySet().size() > 0) {
+            def names = executions.keySet()
+            names.each {
+                if (it in reports) {
+                    executions[it].each {
+                        reports[it.name] = it.plugin.generate(reports[it.config.inputFrom])
+                    }
+                    executions.remove(it)
+                } else {
+                    loopCounter += 1
+                }
+            }
+
+            if (loopCounter == 10) {
+                println "Failed to resolve plugin dependencies, please make sure your configuration has no cycles"
+                break
+            }
         }
 
         generateHtmlReport(header, reports, outputFile)
+    }
+
+    def buildExecutionMap() {
+        Map executions = [:]
+
+        // Build call time lists (considering dependencies to be very simple)
+        plugins.each {
+            name, plugin ->
+                def pluginConfig = config."${name}" as Map
+                def depends = pluginConfig.inputFrom ?: 'versions'
+                def insert = [name: name, plugin: plugin, config: pluginConfig]
+
+                if (depends in executions) {
+                    executions[depends] << insert
+                } else {
+                    executions[depends] = [insert]
+                }
+        }
+
+        return executions
     }
 }

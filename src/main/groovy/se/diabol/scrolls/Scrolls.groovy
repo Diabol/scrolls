@@ -1,28 +1,27 @@
 package se.diabol.scrolls
 
-import org.reflections.Reflections
-
 class Scrolls {
-    static Map plugins = [:]
-    static {
-        println "Scanning for plugins..."
-        new Reflections('se.diabol.scrolls').getSubTypesOf(ScrollsPlugin).each {
-            Class<ScrollsPlugin> pluginClass = Class.forName(it.name) as Class<ScrollsPlugin>
-            ScrollsPlugin plugin = pluginClass.getConstructor().newInstance()
-            plugins[plugin.getName()] = plugin
-            println "  ${plugin.getName()} initialized"
-        }
-        println "...plugin scanning done"
-    }
-
     static void main(String[] args) {
         def options = parseOptions(args)
         if (!options) {
             return
         }
 
-        String output = options.output ?: "Scrolls.html"
         def config = readConfig(options.config)
+        def plugins = initializePlugins(config)
+
+        if (options.help) {
+            println "---Plugins---"
+            plugins.each { name, plugin ->
+                println "${name} config"
+                plugin.getConfigInfo().each { item, desc ->
+                    println "  ${item}: ${desc}"
+                }
+            }
+            return
+        }
+
+        String output = options.output ?: "Scrolls.html"
 
         try {
             def scrollsGenerator = new ScrollsGenerator(config, options, plugins)
@@ -52,28 +51,33 @@ class Scrolls {
 
         if (options && options.help) {
             cli.usage()
-            println "---Plugins---"
-            plugins.each { name, plugin ->
-                println "${name} config"
-                plugin.getConfigInfo().each { item, desc ->
-                    println "  ${item}: ${desc}"
-                }
-            }
-            return null
-        } else {
-            return options
         }
+        return options
     }
 
     static readConfig(fileName) {
         URL path
         if (fileName) {
-            path = new File(fileName).toURI().toURL()
+            path = new File(fileName as String).toURI().toURL()
         } else {
             path = ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
         }
 
         println "Reading configuration from: ${path}"
         return new ConfigSlurper().parse(path)
+    }
+
+    static initializePlugins(config) {
+        def plugins = [:]
+        println "Scanning config for plugins..."
+        config.each { key, items ->
+            if (key != 'scrolls') { // Ignore scrolls config section, all other sections are assumed to be plugin sections
+                ScrollsPlugin plugin = Class.forName(items.plugin as String).newInstance(config: items) as ScrollsPlugin
+                plugins[plugin.name] = plugin
+                println "  ${plugin.name} initialized"
+            }
+        }
+        println "...plugin scanning done"
+        return plugins
     }
 }

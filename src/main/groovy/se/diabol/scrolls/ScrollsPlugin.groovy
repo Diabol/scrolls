@@ -6,6 +6,8 @@ package se.diabol.scrolls
  * interpreted.
  *
  * In order to list all plugins it's also important to give it a name, hence the getName method.
+ *
+ * All plugins must also declare a config field, as that will be passed when the plugin is instantiated
  */
 interface ScrollsPlugin {
     /**
@@ -19,13 +21,11 @@ interface ScrollsPlugin {
      * The actual work method being invoked by Scrolls when it's time to generate a report. It's up to the plugin to
      * determine how to use the oldVersion, newVersion parameters. (E.g. for git it's likely a tag)
      *
-     * @param config Configuration for the plugin. It's read from the Scrolls configuration file and the plugin should
-     * probably treat them with some care as it's user input.
      * @param oldVersion The previous version
      * @param newVersion The current version
      * @return A binding that will work in the plugins template
      */
-    Map generate(Map config, String oldVersion, String newVersion)
+    Map generate(Map input)
 
     /**
      * This method should provide a detailed description of the available configuration settings for the plugin. Keys
