@@ -20,6 +20,30 @@ class JiraReportGenerator
     def iconFeature
     def excludeClosedIssues
 
+    /* TODO: Jira report depends on commit log, need to figure out a good way to deal with that
+    def repositoryReport = getRepositoryReport(oldVersion, newVersion)
+    def jiraReport = null
+    if (repositoryReport) {
+        println "\nRepository report:\n\n${repositoryReport}\n\n"
+        println "\n*** Commits: " + repositoryReport.commits
+
+        JiraReportGenerator jr = new JiraReportGenerator(
+            baseUrl: config.jiraBaseUrl,
+            username: config.jiraUsername,
+            password: config.jiraPassword,
+            iconEpic: config.iconEpic,
+            iconBug: config.iconBug,
+            iconStory: config.iconStory,
+            iconTask: config.iconTask,
+            iconFeature: config.iconFeature,
+            excludeClosedIssues: config.omitClosed
+        )
+
+        jiraReport = jr.createJiraReport(repositoryReport.commits)
+        println "\n*** JiraInfo: " + jiraReport
+    }
+    */
+
     def getProjects() {
         print "Fetching jira project\t"
         return doQuery("${baseUrl}/rest/api/latest/project")
