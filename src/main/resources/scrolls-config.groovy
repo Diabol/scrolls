@@ -2,7 +2,7 @@
  * Welcome to the configuration file for Scrolls. For each plugin you must define a section declaring two fields, the
  * plugin class (key: plugin, value: full package path) and what input it expects (key: inputFrom, value: plugin name
  * or 'versions'). You must also add the configuration specific to the plugin (and it's up the plugin to provide this)
- * inputFrom = 'versions' means the plugin will received the old and new versions set on the commandline as input.
+ * inputFrom = 'versions' means the plugin will receive the old and new versions set on the commandline as input.
  */
 scrolls {
     component = "scrolls"
