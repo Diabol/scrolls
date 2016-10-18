@@ -8,11 +8,6 @@ scrolls {
     component = "scrolls"
 }
 
-test {
-    plugin = "se.diabol.scrolls.TestPlugin"
-    inputFrom = "git"
-}
-
 git {
     plugin = "se.diabol.scrolls.GitPlugin"
     inputFrom = "versions"
