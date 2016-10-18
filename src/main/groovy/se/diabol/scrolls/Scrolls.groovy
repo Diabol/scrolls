@@ -7,8 +7,15 @@ class Scrolls {
             return
         }
 
-        def config = readConfig(options.config)
-        def plugins = initializePlugins(config)
+        def config
+        def plugins
+        try {
+            config = readConfig(options.config)
+            plugins = initializePlugins(config)
+        } catch (RuntimeException e) {
+            println "ERROR: ${e.message}, aborting..."
+            return
+        }
 
         if (options.help) {
             println "---Plugins---"
@@ -26,13 +33,13 @@ class Scrolls {
         try {
             def scrollsGenerator = new ScrollsGenerator(config, options, plugins)
             scrollsGenerator.generate(options.'old-version' as String, options.'new-version' as String, output)
-        } catch (Exception e) {
+        } catch (all) {
             def msg = "Failed to create scrolls for versions ${options.'old-version'} to ${options.'new-version'}"
             println msg
-            e.printStackTrace()
+            all.printStackTrace()
             new File(output).withPrintWriter {writer ->
                 writer.println msg
-                e.printStackTrace(writer)
+                all.printStackTrace(writer)
             }
         }
     }
@@ -72,9 +79,14 @@ class Scrolls {
         println "Scanning config for plugins..."
         config.each { key, items ->
             if (key != 'scrolls') { // Ignore scrolls config section, all other sections are assumed to be plugin sections
-                ScrollsPlugin plugin = Class.forName(items.plugin as String).newInstance(config: items) as ScrollsPlugin
-                plugins[plugin.name] = plugin
-                println "  ${plugin.name} initialized"
+                try {
+                    ScrollsPlugin plugin = Class.forName(items.plugin as String).newInstance(config: items) as ScrollsPlugin
+                    plugins[plugin.name] = plugin
+                    println "  ${plugin.name} initialized"
+                } catch (ClassNotFoundException e) {
+                    println "  ERROR: Failed to load ${items.plugin} (${e.message} not found). Is your classpath correct?"
+                    throw new RuntimeException("Plugin initialization failed")
+                }
             }
         }
         println "...plugin scanning done"
