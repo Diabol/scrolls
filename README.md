@@ -2,14 +2,39 @@
 The Automated Delivery Report Engine
 
 ## What and why?
-Scrolls is a highly extendeble tools for generating rich release notes or delivery reports combining tangeable data from several sources. It's a tool that let's you pull data from many different sources and present it in reports of differents formats. It has a number of built in adapters for different data sources e.g. Git, Subversion, Github, Jira, Jenkins and SonarCube and can easily be extended with plugins. 
-
-Scrolls purpose is to support the principles of Contiunous Delivery by providing traeability and transparency in the delivery process. It gives you the abillity to take fast and informed decisions while deliverying quality software at speed. Stop spending countless hours in status report meetings or running around collecting information about *who did what and why?* to be able to decide if the system is releasable or not!
+Scrolls is a highly extensible tool for generating rich release notes or delivery reports combining tangible data from 
+several sources. It's a tool that let's you pull data from many different sources and present it in reports of different
+ formats. It has a number of built in adapters for different data sources e.g. Git, Subversion, Github, Jira, Jenkins 
+ and SonarCube and can easily be extended with plugins.
+ 
+Scrolls purpose is to support the principles of Continuous Delivery by providing traceability and transparency in the 
+delivery process. It gives you the ability to take fast and informed decisions while delivering quality software at 
+speed. Stop spending countless hours in status report meetings or running around collecting information about 
+*who did what and why?* to be able to decide if the system is releasable or not!
 
 ## Install
 
 ## Configure
 
 ## Run
+Scrolls main interface is it's configuration file and it's command line interface. The basic concept is that plugins
+(i.e. services) are configured in the configuration file and run-time options are given to the cli.
+
+## Plugins
+Plugins are built by implementing the ScrollsPlugin interface and configuring them in the configuration file. Scrolls 
+ships with a few standard plugins to be usable out of the box. Currently, Git support is provided by the GitPlugin
+which knows how to pull data from a git repository. Plugins are allowed to depend on input from other plugins,
+it's up to the plugin author to make sure the plugin works with the input it will receive (and to inform the user of the
+required input).
+
+## Reports
+Reports are based on FreeMarker templates with a default report layout provided. Users are free to override the global 
+template, the stylesheet or individual parts of the template (there's one individual part per plugin). Overrides work by 
+using the --templates option. Specify a directory and place your own .ftl files in this directory, naming them to 
+indicate which template you want to override (as explains in the below list).
+
+ * scrolls-html.ftl for the main/global template
+ * &lt;pluginname&gt;.ftl to override just a plugins part of the template (e.g. git.ftl)
+ * scrolls.css to override the stylesheet used (It too is a FreeMarker template, just named differently)
 
 ## Extend
