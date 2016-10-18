@@ -20,6 +20,10 @@ speed. Stop spending countless hours in status report meetings or running around
 Scrolls main interface is it's configuration file and it's command line interface. The basic concept is that plugins
 (i.e. services) are configured in the configuration file and run-time options are given to the cli.
 
+Developers can run using gradle: 
+
+    gradle run -Drun.args="--old-version 1.0.0 --new-version 2.0.0"
+
 ## Plugins
 Plugins are built by implementing the ScrollsPlugin interface and configuring them in the configuration file. Scrolls 
 ships with a few standard plugins to be usable out of the box. Currently, Git support is provided by the GitPlugin
