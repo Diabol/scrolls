@@ -6,7 +6,7 @@ markdown: kramdown
 highlighter: pygments
 
 ##define base_url for valid usage in sitemap.xml and robots.txt
-baseurl: scrolls
+baseurl: /scrolls
 sass:
   sass_dir: _sass
   style: :compressed
