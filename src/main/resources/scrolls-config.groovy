@@ -8,6 +8,7 @@ scrolls {
     component = "scrolls"
 }
 
+
 git {
     plugin = "se.diabol.scrolls.GitPlugin"
     inputFrom = "versions"
@@ -15,27 +16,34 @@ git {
     git = "git --no-pager"
     repositoryRoot = "./"
     moduleRegexps = [
-            "module1": "^/module1/.*",
-            "module2": "^/module2/.*",
-            "module3": "^/module3/.*"
+        "module1": "^/module1/.*",
+        "module2": "^/module2/.*",
+        "module3": "^/module3/.*"
     ]
     changeTypeRegexps = [
-            "api": ".*/api/.*",
-            "java": ".*/src/main/java.*",
-            "test": ".*/src/test/java.*",
-            "config": ".*/src/main/resources.*\\.xml",
-            "build": ".*/build\\.gradle"
+        "api": ".*/api/.*",
+        "java": ".*/src/main/java.*",
+        "test": ".*/src/test/java.*",
+        "config": ".*/src/main/resources.*\\.xml",
+        "build": ".*/build\\.gradle"
     ]
 }
 
-/*
-jira {
-    plugin = "se.diabol.scrolls.JiraPlugin"
-    inputFrom = "git"
+github {
+    plugin = 'se.diabol.scrolls.GitHubPlugin'
+    inputFrom = 'versions'
 
-    baseUrl = "https://jira.atlassian.com"
-    username = "scrolls"
-    password = "password"
-    omitClosed = true
+    apiUrl = 'https://api.github.com'
+    owner = 'Diabol'
+    repo = 'scrolls'
 }
-*/
+
+//jira {
+//    plugin = "se.diabol.scrolls.JiraPlugin"
+//    inputFrom = "git"
+//
+//    baseUrl = "https://jira.atlassian.com"
+//    username = "scrolls"
+//    password = "password"
+//    omitClosed = true
+//}
