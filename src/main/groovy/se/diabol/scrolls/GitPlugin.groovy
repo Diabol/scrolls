@@ -34,13 +34,13 @@ class GitPlugin implements ScrollsPlugin {
     }
 
     def getCommitLog(tag1, tag2){
-        println "Running git log on ${config.repositoryRoot}"
+        //println "Running git log on ${config.repositoryRoot}"
         def command
 
         if (tag1.isInteger() && (tag1.toInteger() == 0)) {
-            command = "${config.git} log --pretty=oneline ${tag2}"
+            command = "${config.git} log  --color=never --pretty=oneline ${tag2}"
         } else {
-            command = "${config.git} log --pretty=oneline ${tag1}..${tag2}"
+            command = "${config.git} log  --color=never --pretty=oneline ${tag1}..${tag2}"
         }
 
         def result = execCommand(command, config.repositoryRoot as String)
@@ -51,13 +51,12 @@ class GitPlugin implements ScrollsPlugin {
                 commits.put(match[0][1],match[0][2])
             }
         }
-        println "Found ${commits.size()} commits:\n${commits}"
+        //println "Found ${commits.size()} commits:\n${commits}"
         return commits
     }
 
     def getCommitDetails(id) {
         def result = execCommand("${config.git} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", config.repositoryRoot as String)
-        //println "Found git commit details for [${id}]:\n${result.stdout}"
         def commitDetails = [] as HashMap
         boolean headerDone = false;
         result.stdout.eachLine { line ->
@@ -91,8 +90,6 @@ class GitPlugin implements ScrollsPlugin {
                 commitDetails.files.add(line)
             }
         }
-        // This debug log is here because this function fails mysteriously sometimes. Remove when resolved.
-        println "DEBUG: getCommitDetails result for id: ${id} - ${commitDetails}"
         return commitDetails
     }
 
@@ -144,7 +141,7 @@ class GitPlugin implements ScrollsPlugin {
     }
 
     static def execCommand(String command, String workingDirectory='.') {
-        println "execCommand(${command},${workingDirectory})"
+        //println "execCommand(${command},${workingDirectory})"
         def proc = command.execute(null as String[], new File(workingDirectory))
         def sout = new StringBuffer()
         def serr = new StringBuffer()
