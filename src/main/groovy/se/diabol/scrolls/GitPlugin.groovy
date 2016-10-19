@@ -1,23 +1,49 @@
 package se.diabol.scrolls
 
-class GitReportGenerator extends AbstractReportGenerator {
+class GitPlugin implements ScrollsPlugin {
 
-    def git = "git --no-pager"
-    def repositoryRoot = "./"
-    def modulesRegexps = ["default": ".*"]
-    def changeTypeRegexps = [:]
+    def config
 
-    def getCommitLog(tag1,tag2, gitLogOptions){
-        println "Running git log on ${repositoryRoot}"
+    @Override
+    Map generate(Map input) {
+        String oldVersion = input.'old'
+        String newVersion = input.'new'
+
+        def commits = []
+        def commitLog = getCommitLog(oldVersion, newVersion)
+        commitLog.each {c ->
+            commits.add(getCommitDetails(c.key))
+        }
+        def summary = calcSummary(commits)
+        def modules = parseModules(commits)
+
+        return [summary: summary, modules: modules, commits: commits]
+    }
+
+    @Override
+    String getName() {
+        return 'git'
+    }
+
+    @Override
+    Map getConfigInfo() {
+        return [git: 'git and commandline options. Default: git --no-pager',
+                repositoryRoot: 'path relative to git repository root. Default: ./',
+                moduleRegexps: 'map of modules and regexps. Defaults to: [default: ".*"]',
+                changeTypeRegexps: 'map types of changes depending on where in the repository they are found. E.g. [api: ".*/api/.*]']
+    }
+
+    def getCommitLog(tag1, tag2){
+        //println "Running git log on ${config.repositoryRoot}"
         def command
 
         if (tag1.isInteger() && (tag1.toInteger() == 0)) {
-            command = "${git} log --pretty=oneline ${gitLogOptions} ${tag2}"
+            command = "${config.git} log  --color=never --pretty=oneline ${tag2}"
         } else {
-            command = "${git} log --pretty=oneline ${gitLogOptions} ${tag1}..${tag2}"
+            command = "${config.git} log  --color=never --pretty=oneline ${tag1}..${tag2}"
         }
 
-        def result = execCommand(command, repositoryRoot)
+        def result = execCommand(command, config.repositoryRoot as String)
         def commits = [] as HashMap
         result.stdout.eachLine { l ->
             def match = l =~ /^([a-z0-9]*) (.*)$/
@@ -25,13 +51,12 @@ class GitReportGenerator extends AbstractReportGenerator {
                 commits.put(match[0][1],match[0][2])
             }
         }
-        println "Found ${commits.size()} commits:\n${commits}"
+        //println "Found ${commits.size()} commits:\n${commits}"
         return commits
     }
 
     def getCommitDetails(id) {
-        def result = execCommand("${git} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", repositoryRoot)
-        //println "Found git commit details for [${id}]:\n${result.stdout}"
+        def result = execCommand("${config.git} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", config.repositoryRoot as String)
         def commitDetails = [] as HashMap
         boolean headerDone = false;
         result.stdout.eachLine { line ->
@@ -65,12 +90,10 @@ class GitReportGenerator extends AbstractReportGenerator {
                 commitDetails.files.add(line)
             }
         }
-        // This debug log is here because this function fails mysteriously sometimes. Remove when resolved.
-        println "DEBUG: getCommitDetails result for id: ${id} - ${commitDetails}"
         return commitDetails
     }
 
-    def calcSummary(commits) {
+    static def calcSummary(commits) {
         def summary = [
                 nbrOfChanges: commits.size(),
                 nbrOfPeople: commits.collect{it.author}.unique().size(),
@@ -84,12 +107,12 @@ class GitReportGenerator extends AbstractReportGenerator {
         commits.each { commit ->
             //println "Analyzing: ${commit}"
             commit.files.each {file ->
-                modulesRegexps.each { mod,modRegExp ->
+                config.modulesRegexps.each { mod,modRegExp ->
                     println("Checking file ${file} against mod ${mod} and expr ${modRegExp}: " + (file =~ /${modRegExp}/))
                     if (file =~ /${modRegExp}/ ) {
                         commit.module = mod
                         def changeTypes = [] as HashSet
-                        changeTypeRegexps.each { tag,tagRegExp ->
+                        config.changeTypeRegexps.each { tag,tagRegExp ->
                             println "Matching: '${file}' with change type regexp: '${tagRegExp}'"
                             if (file =~ /${tagRegExp}/) {
                                 println "Matched! Adding changetype: '${tag}'"
@@ -117,27 +140,19 @@ class GitReportGenerator extends AbstractReportGenerator {
         return modules.values()
     }
 
-    def createReport(tag1,tag2, gitLogOptions) {
-        def commits = []
-        def commitLog = getCommitLog(tag1,tag2, gitLogOptions)
-        commitLog.each {c ->
-            commits.add(getCommitDetails(c.key))
+    static def execCommand(String command, String workingDirectory='.') {
+        //println "execCommand(${command},${workingDirectory})"
+        def proc = command.execute(null as String[], new File(workingDirectory))
+        def sout = new StringBuffer()
+        def serr = new StringBuffer()
+        proc.consumeProcessOutput(sout,serr)
+        proc.waitFor()
+        if (proc.exitValue() != 0) {
+            println "Failed to execute command: ${command}"
+            println serr
+            println sout
+            throw new Exception("Failed to Execute command: ${command} : ${serr.toString()}")
         }
-        def summary = calcSummary(commits)
-        //println "Commits:\n${commits}"
-        def modules = parseModules(commits)
-
-        return [summary: summary, modules: modules, commits: commits]
-    }
-
-    public static void main(String[] args) {
-        GitReportGenerator grg = new GitReportGenerator(
-            repositoryRoot: "./",
-             modulesRegexps: ["eb": "^web/.*"],
-             changeTypeRegexps: ["javascript": ".*/javascript/.*\\.js"]
-
-        )
-        def report = grg.createReport("release-1.0.990","release-1.0.999", "")
-        println "\n\nFinal report:\n${report}"
+        return [status  : proc.exitValue(), stdout: sout, stderr: serr]
     }
 }

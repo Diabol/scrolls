@@ -1,5 +1,9 @@
 package se.diabol.scrolls
 
+import freemarker.cache.ClassTemplateLoader
+import freemarker.cache.FileTemplateLoader
+import freemarker.cache.MultiTemplateLoader
+import freemarker.cache.TemplateLoader
 import freemarker.template.*
 
 import java.nio.charset.StandardCharsets;
@@ -7,156 +11,131 @@ import java.nio.charset.StandardCharsets;
 class ScrollsGenerator {
 
     def config
+    Configuration freemarkerConfig
+    def plugins
 
-    def getRepositoryReport(version1, version2) {
-        def repositoryInfo
-        if (config.repositoryType == "git") {
-            println "\nUsing GitReportGenerator..."
-            GitReportGenerator reportGenerator = new GitReportGenerator(
-                    modulesRegexps: config.moduleRegexps,
-                    changeTypeRegexps: config.changeTypeRegexps
-            )
-            repositoryInfo = reportGenerator.createReport(version1, version2, config.logOptions)
+    ScrollsGenerator(config, options, plugins) {
+        this.config = config
+        this.freemarkerConfig = initializeFreemarker(options.templates)
+        this.plugins = plugins
+    }
+
+    /**
+     * Initialize FreeMarker with support for loading templates from both path (when set with --templates option) and
+     * classpath resource (which is the default)
+     *
+     * @param config
+     * @return
+     */
+    private Configuration initializeFreemarker(templates) {
+        Configuration freemarkerConfig = new Configuration()
+        freemarkerConfig.defaultEncoding = StandardCharsets.UTF_8.name()
+        freemarkerConfig.templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
+        freemarkerConfig.logTemplateExceptions = false
+
+        if (templates) {
+            TemplateLoader[] loaders = new TemplateLoader[2]
+            loaders[0] = new FileTemplateLoader(new File(templates as String))
+            loaders[1] = new ClassTemplateLoader(getClass(), '/')
+            freemarkerConfig.setTemplateLoader(new MultiTemplateLoader(loaders))
         } else {
-            throw new IllegalArgumentException("Unsupported repository type: ${config.repositoryType}")
+            freemarkerConfig.setClassForTemplateLoading(getClass(), '/')
         }
-        return repositoryInfo
+
+        return freemarkerConfig
     }
 
-    def getJiraInfo(commitComments) {
-        JiraReportGenerator jr = new JiraReportGenerator(
-            baseUrl: config.jiraBaseUrl,
-            username: config.jiraUsername,
-            password: config.jiraPassword,
-            iconEpic: config.iconEpic,
-            iconBug: config.iconBug,
-            iconStory: config.iconStory,
-            iconTask: config.iconTask,
-            iconFeature: config.iconFeature,
-            excludeClosedIssues: config.omitClosed
-        )
+    def generateHtmlReport(Map header, Map reports, String outputFile) {
+        def templateNameToRead = config.scrolls.templateName ?: 'scrolls-html.ftl'
 
-        return jr.createJiraReport(commitComments)
-    }
-
-    def generateHtmlReport(header, repository, jira, templateName, outputFile) {
-        Configuration cfg = new Configuration()
-        cfg.setClassForTemplateLoading(getClass(), "/")
-        cfg.defaultEncoding = StandardCharsets.UTF_8.name()
-        cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER)
-
-        def templateNameToRead = templateName ?: 'scrolls-template.html'
-        Template template = cfg.getTemplate(templateNameToRead)
-
-        println "Read template ${templateName}: " + (template ? "ok" : "not ok")
-        Map binding = [header: header]
-        if (repository) {
-            binding.repository = repository
-        }
-        if (jira) {
-            binding.jira = jira
+        Template template
+        try {
+            print "Parsing template ${templateNameToRead}..."
+            template = freemarkerConfig.getTemplate(templateNameToRead)
+            println "OK"
+        } catch (IOException e) {
+            println "FAIL!"
+            println "ERROR: ${e.message}"
         }
 
-        def outFile = new File(outputFile)
-        outFile.withWriter {
-            template.process(binding, it)
+        Map dataModel = [header: header, reports: reports]
+
+        new File(outputFile).withWriter {
+            try {
+                print "Processing template..."
+                template.process(dataModel, it)
+                println "OK"
+            } catch (TemplateException e) {
+                println "FAIL!"
+                println "ERROR: ${e.message}"
+                println "ERROR: DataModel: ${dataModel}"
+            }
         }
     }
 
-    def generateScrolls(environment, version1, version2, templateName, outputFile) {
-        def header = [
-                component: config.component,
-                environment: environment ? environment : "",
+    def generate(String oldVersion, String newVersion, String outputFile) {
+        Map header = [
+                component: config.scrolls.component,
                 date: new Date().format("yyyy-MM-dd HH:mm:ss"),
-                oldVersion: version1,
-                newVersion: version2,
-                jenkinsUrl: config.jenkinsUrl? config.jenkinsUrl : ""
+                oldVersion: oldVersion,
+                newVersion: newVersion,
         ]
 
-        def repositoryReport = getRepositoryReport(version1, version2)
-        def jiraReport = null
-        if (repositoryReport) {
-            println "\nRepository report:\n\n${repositoryReport}\n\n"
-            println "\n*** Commits: " + repositoryReport.commits
+        println "Collecting data..."
 
-            jiraReport = getJiraInfo(repositoryReport.commits)
-            println "\n*** JiraInfo: " + jiraReport
+        Map versions = [old: oldVersion, new: newVersion]
+        Map reports = [:]
+        Map executions = buildExecutionMap()
+
+        // Run the plugins that require versions (and make sure we drop them from further execution)
+        executions.remove('versions').each {
+            print "  from ${it.name}..."
+            reports[it.name] = it.plugin.generate(versions)
+            println "OK"
         }
 
-        def watchers = []
+        // TODO: Replace hackish loopCounter with topological sorting of dependencies (with cycle detection before running!)
+        int loopCounter = 0
+        while (executions.keySet().size() > 0) {
+            def names = executions.keySet()
+            names.each {
+                if (it in reports) {
+                    executions[it].each {
+                        print "  from ${it.name}..."
+                        reports[it.name] = it.plugin.generate(reports[it.config.inputFrom])
+                        println "OK"
+                    }
+                    executions.remove(it)
+                } else {
+                    loopCounter += 1
+                }
+            }
 
-        repositoryReport?.commits?.each { commit ->
-            if ("git" == config.repositoryType) {
-                watchers.add(commit.email)
-                println("Added: ${commit.email} to watchers list")
-            } else {
-                watchers.add(commit.author)
-                println("Added: ${commit.author} to watchers list")
+            if (loopCounter == 10) {
+                throw new RuntimeException("Failed to resolve plugin dependencies, please make sure your configuration has no cycles.")
             }
         }
-        generateHtmlReport(header, repositoryReport, jiraReport, templateName, outputFile)
+
+        generateHtmlReport(header, reports, outputFile)
     }
 
-    static void main(String[] args) {
-        def cli = new CliBuilder()
-        cli.h(longOpt: 'help', required: false, 'show usage information')
-        cli.e(longOpt: 'environment', argName: 'environment', required: false, args: 1, 'The environment to check version against')
-        cli.v1(longOpt: 'version1', argName: 'version1', required: false, args: 1, 'If no environment is specified this is the version to compare with')
-        cli.v2(longOpt: 'version2', argName: 'version2', required: true, args: 1, 'The second version to compare with')
-        cli.r(longOpt: 'repositoryRoot', argName: 'repositoryRoot', required: false, args: 1, 'Git repositories root dir here to find all components [./]')
-        cli.c(longOpt: 'configPath', argName: 'configPath', required: false, args: 1, 'Path to configPath file')
-        cli.o(longOpt: 'output', argName: 'fileName', required: false, args: 1, 'Output file name [./Scrolls.html]')
-        cli.f(longOpt: 'failsafe',  required: false, 'Should script fail on errors? [false]')
-        cli.t(longOpt: 'template',  required: false, args: 1, 'Path to FreeMarker html template [./]')
-        cli.oc(longOpt: 'omitClosed',  required: false, 'Omit closed issues when linking commits? [true]')
-        cli.opt(longOpt: 'options',  required: false, args: 1, 'Logging option params for git log')
+    def buildExecutionMap() {
+        Map executions = [:]
 
-        def opt = cli.parse(args)
-        if (!opt) { return }
-        if (opt.help) {
-            cli.usage();
-            return
+        // Build call time lists (considering dependencies to be very simple)
+        plugins.each {
+            name, plugin ->
+                def pluginConfig = config."${name}" as Map
+                def depends = pluginConfig.inputFrom ?: 'versions'
+                def insert = [name: name, plugin: plugin, config: pluginConfig]
+
+                if (depends in executions) {
+                    executions[depends] << insert
+                } else {
+                    executions[depends] = [insert]
+                }
         }
 
-        def environment = opt.environment == "--" ? null : opt.environment
-        def version1 = opt.version1 == "--" ? null : opt.version1
-        def version2 = opt.version2
-        def configPath = opt.'configPath'
-        def output = opt.output ?: "Scrolls.html"
-        def template = opt.template ?: null
-        boolean failsafe = opt.failsafe
-
-        def configUrl = configPath ? new File(configPath).toURI().toURL() : ScrollsGenerator.class.getClassLoader().getResource("scrolls-config.groovy")
-
-        println "Reading config from: ${configUrl}"
-        def config = new ConfigSlurper().parse(configUrl)
-
-        config.put('omitClosed', opt.oc)
-
-        if (opt.opt) {
-            config.put('logOptions', opt.opt)
-        } else {
-            config.put('logOptions', '')
-        }
-
-        if (!(environment || version1)) {
-            println "Either option e (environment) or v1 (version1) must be specified"
-            return
-        }
-
-        try {
-            def rnc = new ScrollsGenerator(config:  config)
-            rnc.generateScrolls(environment, version1, version2, template, output)
-        } catch (Exception e) {
-            println "Failed to create release notes for env ${environment} from version ${version1} to version ${version2}"
-            e.printStackTrace()
-            new File(output).withPrintWriter {writer ->
-                writer.println "Failed to create release notes for env ${environment} from version ${version1} to version ${version2} with remote ${remote}"
-                e.printStackTrace(writer)
-            }
-            if (!failsafe) {
-                System.exit(1)
-            }
-        }
+        return executions
     }
 }
