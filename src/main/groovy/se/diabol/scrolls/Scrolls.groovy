@@ -1,5 +1,7 @@
 package se.diabol.scrolls
 
+import groovy.json.JsonSlurper
+
 class Scrolls {
     static void main(String[] args) {
         def options = parseOptions(args)
@@ -73,13 +75,40 @@ class Scrolls {
         cli.c(longOpt: 'config', args: 1, 'Path to config file')
         cli.o(longOpt: 'output', args: 1, 'Output file name [./scrolls.html]')
         cli.t(longOpt: 'templates', args: 1, 'Override default templates from this directory')
+        cli.m(longOpt: 'multirepo', args: 0, 'Use multiple repositories, requires a json structure input of old- and new version')
 
         def options = cli.parse(args)
 
         if (options && options.help) {
             cli.usage()
         }
+
+        if (options?.multirepo) {
+            options.'old-version' = validateMultiRepo(options.'old-version')
+            options.'new-version' = validateMultiRepo(options.'new-version')
+        }
+
         return options
+    }
+
+    String validateMultiRepo(version) {
+        if (version?.startsWith('file://')) {
+            def file = new File(version.substring(7)).toURI().toURL()
+            def multiversion = new JsonSlurper().parse(file)
+            assertTrue(multiversion.hasKey('version'))
+            assertTrue(multiversion.hasKey('components'))
+            multiversion.components.each {
+                assertTrue(it.key != null)
+                assertTrue(it.branch != null)
+                assertTrue(it.version != null)
+            }
+        } else if (version?.startsWith('http://')) {
+            assertTrue(false, "multirepo config from url is not supported")
+        }  else if (version?.startsWith('https://')) {
+            assertTrue(false, "multirepo config from url is not supported")
+        } else  {
+            assertTrue(false, "unsupported multirepo configuration")
+        }
     }
 
     static readConfig(fileName) {
