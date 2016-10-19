@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 class ScrollsGenerator {
 
     def config
-    def freemarkerConfig
+    Configuration freemarkerConfig
     def plugins
 
     ScrollsGenerator(config, options, plugins) {
@@ -31,6 +31,7 @@ class ScrollsGenerator {
         Configuration freemarkerConfig = new Configuration()
         freemarkerConfig.defaultEncoding = StandardCharsets.UTF_8.name()
         freemarkerConfig.templateExceptionHandler = TemplateExceptionHandler.RETHROW_HANDLER
+        freemarkerConfig.logTemplateExceptions = false
 
         if (templates) {
             TemplateLoader[] loaders = new TemplateLoader[2]
@@ -46,13 +47,29 @@ class ScrollsGenerator {
 
     def generateHtmlReport(Map header, Map reports, String outputFile) {
         def templateNameToRead = config.scrolls.templateName ?: 'scrolls-html.ftl'
-        Template template = freemarkerConfig.getTemplate(templateNameToRead)
 
-        println "Read template ${templateNameToRead}: " + (template ? "ok" : "not ok")
-        Map binding = [header: header, reports: reports]
+        Template template
+        try {
+            print "Parsing template ${templateNameToRead}..."
+            template = freemarkerConfig.getTemplate(templateNameToRead)
+            println "OK"
+        } catch (IOException e) {
+            println "FAIL!"
+            println "ERROR: ${e.message}"
+        }
+
+        Map dataModel = [header: header, reports: reports]
 
         new File(outputFile).withWriter {
-            template.process(binding, it)
+            try {
+                print "Processing template..."
+                template.process(dataModel, it)
+                println "OK"
+            } catch (TemplateException e) {
+                println "FAIL!"
+                println "ERROR: ${e.message}"
+                println "ERROR: DataModel: ${dataModel}"
+            }
         }
     }
 
@@ -64,13 +81,17 @@ class ScrollsGenerator {
                 newVersion: newVersion,
         ]
 
+        println "Collecting data..."
+
         Map versions = [old: oldVersion, new: newVersion]
         Map reports = [:]
         Map executions = buildExecutionMap()
 
         // Run the plugins that require versions (and make sure we drop them from further execution)
         executions.remove('versions').each {
+            print "  from ${it.name}..."
             reports[it.name] = it.plugin.generate(versions)
+            println "OK"
         }
 
         // TODO: Replace hackish loopCounter with topological sorting of dependencies (with cycle detection before running!)
@@ -80,7 +101,9 @@ class ScrollsGenerator {
             names.each {
                 if (it in reports) {
                     executions[it].each {
+                        print "  from ${it.name}..."
                         reports[it.name] = it.plugin.generate(reports[it.config.inputFrom])
+                        println "OK"
                     }
                     executions.remove(it)
                 } else {
@@ -89,8 +112,7 @@ class ScrollsGenerator {
             }
 
             if (loopCounter == 10) {
-                println "Failed to resolve plugin dependencies, please make sure your configuration has no cycles"
-                break
+                throw new RuntimeException("Failed to resolve plugin dependencies, please make sure your configuration has no cycles.")
             }
         }
 

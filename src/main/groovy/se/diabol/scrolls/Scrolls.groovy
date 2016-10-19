@@ -82,14 +82,13 @@ class Scrolls {
                 try {
                     ScrollsPlugin plugin = Class.forName(items.plugin as String).newInstance(config: items) as ScrollsPlugin
                     plugins[plugin.name] = plugin
-                    println "  ${plugin.name} initialized"
+                    println "  ${plugin.name} plugin initialized"
                 } catch (ClassNotFoundException e) {
                     println "  ERROR: Failed to load ${items.plugin} (${e.message} not found). Is your classpath correct?"
                     throw new RuntimeException("Plugin initialization failed")
                 }
             }
         }
-        println "...plugin scanning done"
         return plugins
     }
 }
