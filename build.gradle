@@ -30,6 +30,7 @@ dependencies {
 
 task uberjar(type: Jar, dependsOn:[':compileJava',':compileGroovy']) {
     from files(sourceSets.main.output.classesDir)
+    from files(sourceSets.main.resources)
     from configurations.runtime.asFileTree.files.collect { zipTree(it) }
 
     manifest {
