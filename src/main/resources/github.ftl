@@ -1,6 +1,7 @@
 <#if report??>
 <div>
     <h2>GitHub Pull Requests</h2>
+    <#if report.pulls?size gt 0>
     <table>
         <tr>
             <th>#</th>
@@ -25,4 +26,7 @@
             <td>${pr.to}</td>
         </tr>
         </#list>
+    <#else>
+        There are no open pull requests
+    </#if>
 </#if>
