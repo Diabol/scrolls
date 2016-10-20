@@ -1,23 +1,31 @@
-apply plugin: 'groovy'
+allprojects {
+    apply plugin: 'groovy'
+
+    group = 'se.diabol.scrolls'
+    version = '0.0.1-SNAPSHOT'
+
+    project.sourceCompatibility = 1.8
+    project.targetCompatibility = 1.8
+
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        compile group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.4.7'
+    }
+}
+
 apply plugin: 'maven'
 apply plugin: 'application'
 
-group = 'se.diabol.scrolls'
-version = '0.0.1-SNAPSHOT'
-
-description = """An Automated Delivery Report Engine"""
+description = 'An Automated Delivery Report Engine'
 
 mainClassName = 'se.diabol.scrolls.Scrolls'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-repositories {
-    jcenter()
-}
-
 dependencies {
-    compile group: 'org.codehaus.groovy', name: 'groovy-all', version:'2.4.7'
+    compile project(':plugin-api')
+
     compile group: 'org.freemarker', name: 'freemarker', version:'2.3.25-incubating'
     compile group: 'org.codehaus.groovy.modules.http-builder', name: 'http-builder', version:'0.7.1'
     compile group: 'commons-cli', name: 'commons-cli', version:'1.3.1'
