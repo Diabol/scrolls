@@ -9,6 +9,18 @@ class Scrolls {
             return
         }
 
+        Map oldVersion
+        Map newVersion
+        if (options.multirepo) {
+            oldVersion = validateMultiRepo(options.'old-version')
+            newVersion = validateMultiRepo(options.'new-version')
+        } else {
+            oldVersion.name = options.name? options.name : ''
+            oldVersion.version = options.'old-version'
+            newVersion.name = options.name? options.name : ''
+            newVersion.version = options.'new-version'
+        }
+
         def config
         def plugins
         try {
@@ -16,7 +28,7 @@ class Scrolls {
             plugins = initializePlugins(config)
         } catch (RuntimeException e) {
             println "ERROR: ${e.message}, aborting..."
-            return
+            System.exit(1)
         }
 
         if (options.help) {
@@ -34,7 +46,7 @@ class Scrolls {
 
         try {
             def scrollsGenerator = new ScrollsGenerator(config, options, plugins)
-            scrollsGenerator.generate(options.'old-version' as String, options.'new-version' as String, output)
+            scrollsGenerator.generate(oldVersion, newVersion, output)
         } catch (all) {
             def msg = "Failed to create scrolls for versions ${options.'old-version'} to ${options.'new-version'}"
             println msg
@@ -63,32 +75,27 @@ class Scrolls {
             cli.usage()
         }
 
-        if (options?.multirepo) {
-            options.'old-version' = validateMultiRepo(options.'old-version')
-            options.'new-version' = validateMultiRepo(options.'new-version')
-        }
-
         return options
     }
 
-    String validateMultiRepo(version) {
-        if (version?.startsWith('file://')) {
+    static Map validateMultiRepo(String version) {
+        def multiversion = null
+        if (version?.startsWith("{")) {
+             multiversion = new JsonSlurper().parse(version.toCharArray())
+        } else if (version?.startsWith('file://')) {
             def file = new File(version.substring(7)).toURI().toURL()
-            def multiversion = new JsonSlurper().parse(file)
-            assertTrue(multiversion.hasKey('version'))
-            assertTrue(multiversion.hasKey('components'))
-            multiversion.components.each {
-                assertTrue(it.key != null)
-                assertTrue(it.branch != null)
-                assertTrue(it.version != null)
-            }
-        } else if (version?.startsWith('http://')) {
-            assertTrue(false, "multirepo config from url is not supported")
-        }  else if (version?.startsWith('https://')) {
-            assertTrue(false, "multirepo config from url is not supported")
+            multiversion = new JsonSlurper().parse(file)
         } else  {
-            assertTrue(false, "unsupported multirepo configuration")
+            println "unsupported multirepo configuration"
+            assert false
         }
+        assert multiversion?.name != null
+        assert multiversion?.version != null
+        multiversion?.repos.values().each {
+            assert it.name != null
+            assert it.version != null
+        }
+        return multiversion
     }
 
     static readConfig(fileName) {

@@ -29,14 +29,14 @@ git {
     ]
 }
 
-github {
-    plugin = 'se.diabol.scrolls.GitHubPlugin'
-    inputFrom = 'versions'
-
-    apiUrl = 'https://api.github.com'
-    owner = 'Diabol'
-    repo = 'scrolls'
-}
+//github {
+//    plugin = 'se.diabol.scrolls.GitHubPlugin'
+//    inputFrom = 'versions'
+//
+//    apiUrl = 'https://api.github.com'
+//    owner = 'Diabol'
+//    repo = 'scrolls'
+//}
 
 //jira {
 //    plugin = "se.diabol.scrolls.JiraPlugin"

@@ -6,14 +6,26 @@ class GitPlugin implements ScrollsPlugin {
 
     @Override
     Map generate(Map input) {
-        String oldVersion = input.'old'
-        String newVersion = input.'new'
+        Map oldVersion = input.'old'
+        Map newVersion = input.'new'
 
-        def commits = []
-        def commitLog = getCommitLog(oldVersion, newVersion)
-        commitLog.each {c ->
-            commits.add(getCommitDetails(c.key))
+        Map commits = []
+        if (oldVersion.repos) {
+            println "Detected multiple repository configuration"
+            for (def repo : newVersion.repos) {
+                def commitLog = getCommitLog(oldVersion.repos[repo.name].version, newVersion.repos[repo.name].version)
+                commitLog.each {c ->
+                    commits[repo.name].add(getCommitDetails(c.key))
+                }
+            }
+        } else {
+            println "Detected single repository configuration"
+            def commitLog = getCommitLog(oldVersion.version, newVersion.version)
+            commitLog.each {c ->
+                commits[oldVersion.name].add(getCommitDetails(c.key))
+            }
         }
+
         def summary = calcSummary(commits)
         def modules = parseModules(commits)
 
