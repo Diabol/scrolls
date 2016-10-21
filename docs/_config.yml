@@ -3,7 +3,7 @@ name: Scrolls
 ##Markdown processor
 markdown: kramdown
 ##syntax highlighter. change it to pygments
-highlighter: pygments
+highlighter: rouge
 
 ##define base_url for valid usage in sitemap.xml and robots.txt
 baseurl: /scrolls
