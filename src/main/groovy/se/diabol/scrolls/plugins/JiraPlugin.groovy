@@ -1,11 +1,6 @@
 package se.diabol.scrolls.plugins
 
-import groovyx.net.http.*
-
-import java.nio.charset.StandardCharsets
-
-import static groovyx.net.http.ContentType.JSON
-import static groovyx.net.http.Method.*
+import com.mashape.unirest.http.Unirest
 
 class JiraPlugin implements ScrollsPlugin {
     def iconEpic
@@ -46,18 +41,18 @@ class JiraPlugin implements ScrollsPlugin {
             def json = getIssue(key)
 
             if (json) {
-                if (json.fields.customfield_10058) { // check if the issue has been released, if so, do not include in list
+                if (json.fields.has('customfield_10058')) { // check if the issue has been released, if so, do not include in list
                     def releaseDate = new Date().parse("yyyy-M-d", json.fields.customfield_10058)
                     def currentState = json.fields.status.name
                     def releasedState = issueReleased(releaseDate, currentState)
 
-                    println "** Release date for linked issue: ${json.fields.customfield_10058}"
-                    println "** Status for linked issue: ${json.fields.status.name}"
-                    println "** Released already: ${releasedState}"
+                    //println "** Release date for linked issue: ${json.fields.customfield_10058}"
+                    //println "** Status for linked issue: ${json.fields.status.name}"
+                    //println "** Released already: ${releasedState}"
 
 
                     if (config.omitClosed && releasedState) {
-                        println "** --> Issue " + key + " skipped as it has already been released."
+                        //println "** --> Issue " + key + " skipped as it has already been released."
                         return
                     }
                 }
@@ -104,35 +99,32 @@ class JiraPlugin implements ScrollsPlugin {
     }
 
     def getProjects() {
-        print "Fetching jira project\t"
+        //print "Fetching jira project\t"
         return doQuery("${config.baseUrl}/rest/api/latest/project")
     }
 
     def getIssue(key) {
-        print "Fetching jira issue: ${key}\t"
+        //print "Fetching jira issue: ${key}\t"
         return doQuery("${config.baseUrl}/rest/api/latest/issue/${key}")
     }
 
     private doQuery(String url) {
-        def http = new HTTPBuilder(url)
-        http.encoderRegistry = new EncoderRegistry(charset: StandardCharsets.UTF_8.name())
-        http.request(GET, JSON) { req ->
-            headers.'User-Agent' = 'Mozilla/5.0'
-            headers.'Authorization' = 'Basic ' + "${config.username}:${config.password}".toString().bytes.encodeBase64().toString()
+        def headers = ['User-Agent': 'Mozilla/5.0',
+                       'Authorization': "Basic " + "${config.username}:${config.password}".bytes.encodeBase64().toString()]
+        def request = Unirest.get(url).headers(headers)
+        def response = request.asJson()
 
-            response.success = { resp, json ->
-                println Success: resp.status
-                return json
-            }
+        if (response.status != 200) {
+            println "ERROR: jira - Got status code ${response.status} but expected 200 for ${request.url}"
+            return [:]
+        }
 
-            response.failure = { resp, json ->
-                println Failed: resp.status
-                println json
-                return
-            }
+        if (response.body.isArray()) {
+           return response.body.array
+        } else {
+            return response.body.object
         }
     }
-
 
     def issueReleased(releaseDate, currentState) {
         def currentDate = new Date()
@@ -144,7 +136,7 @@ class JiraPlugin implements ScrollsPlugin {
         boolean storyAdded = false
 
         // TODO: replace this custom field with the non-test jira server custom field name
-        if (check.customfield_11622) {
+        if (check.has('customfield_11622')) {
             def issueIcon = getIssueIcon(check.fields.issuetype.name)
 
             issues.each { issue ->
