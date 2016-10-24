@@ -46,22 +46,14 @@ class ScrollsGenerator {
     }
 
     def generateHtmlReport(Map header, Map reports) {
-        def templateNameToRead = config.scrolls.templateName ?: 'scrolls-html.ftl'
-
-        Template template
-        try {
-            print "Parsing template ${templateNameToRead}..."
-            template = freemarkerConfig.getTemplate(templateNameToRead)
-            println "OK"
-        } catch (all) {
-            println "FAIL!"
-            throw new RuntimeException(all.message)
-        }
-
         def parent = new File(config.scrolls.outputDirectory as String)
+        def cssDir = new File(parent, 'css')
+        def imagesDir = new File(parent, 'images')
         try {
             print "Preparing output directory ${config.scrolls.outputDirectory}..."
-            prepareOutputDirectory(parent)
+            [parent, cssDir, imagesDir].each {
+                prepareOutputDirectory(it)
+            }
             println "OK"
         } catch (all) {
             println "FAIL!"
@@ -69,7 +61,22 @@ class ScrollsGenerator {
         }
 
         Map dataModel = [header: header, reports: reports]
-        new File(parent, 'index.html').withWriter {
+        processTemplate('scrolls-html.ftl', dataModel, new File(parent, 'index.html'))
+        processTemplate('scrolls-css.ftl', dataModel, new File(cssDir, 'scrolls.css'))
+    }
+
+    private def processTemplate(String templateName, Map dataModel, File outputFile) {
+        Template template
+        try {
+            print "Parsing template ${templateName}..."
+            template = freemarkerConfig.getTemplate(templateName)
+            println "OK"
+        } catch (all) {
+            println "FAIL!"
+            throw new RuntimeException(all.message)
+        }
+
+        outputFile.withWriter {
             try {
                 print "Processing template..."
                 template.process(dataModel, it)
@@ -81,13 +88,13 @@ class ScrollsGenerator {
         }
     }
 
-    def prepareOutputDirectory(File directory) {
+    static def prepareOutputDirectory(File directory) {
         if (directory.exists() && directory.isFile()) {
-            throw new RuntimeException("File exists with same name as ${config.scrolls.outputDirectory}. Please rename file, or change output directory.")
+            throw new RuntimeException("File exists with same name as ${directory}. Please rename file, or change output directory.")
         }
 
         if (!directory.exists() && !directory.mkdirs()) {
-            throw new RuntimeException("Failed to created output directory: ${config.scrolls.outputDirectory}")
+            throw new RuntimeException("Failed to created output directory: ${directory}")
         }
     }
 
