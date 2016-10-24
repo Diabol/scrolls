@@ -1,6 +1,7 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.plugins
 
 import groovyx.net.http.*
+import se.diabol.scrolls.engine.ScrollsPlugin
 
 import java.nio.charset.StandardCharsets
 

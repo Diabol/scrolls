@@ -1,5 +1,6 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.engine
 
+import se.diabol.scrolls.engine.ScrollsGenerator
 import spock.lang.Specification
 
 class ScrollsGeneratorTest extends Specification {

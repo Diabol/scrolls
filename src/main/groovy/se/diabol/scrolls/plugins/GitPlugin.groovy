@@ -1,4 +1,6 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.plugins
+
+import se.diabol.scrolls.engine.ScrollsPlugin
 
 class GitPlugin implements ScrollsPlugin {
 
@@ -9,20 +11,32 @@ class GitPlugin implements ScrollsPlugin {
         Map oldVersion = input.'old'
         Map newVersion = input.'new'
 
-        Map commits = []
+        println "oldVersion=$oldVersion"
+        println "newVersion=$newVersion"
+
+        Map commits = [:]
         if (oldVersion.repos) {
             println "Detected multiple repository configuration"
-            for (def repo : newVersion.repos) {
-                def commitLog = getCommitLog(oldVersion.repos[repo.name].version, newVersion.repos[repo.name].version)
+            newVersion.repos.each() { name, repo ->
+                def commitLog = getCommitLog(
+                        oldVersion.repos[repo.name].version,
+                        newVersion.repos[repo.name].version,
+                        config.git.repositoryRoot+oldVersion.repos[repo.name].name)
+                commits[oldVersion.name] = []
                 commitLog.each {c ->
-                    commits[repo.name].add(getCommitDetails(c.key))
+                    commits[repo.name].add(
+                            getCommitDetails(c.key, config.git.repositoryRoot+oldVersion.repos[repo.name].name)
+                    )
                 }
             }
         } else {
             println "Detected single repository configuration"
-            def commitLog = getCommitLog(oldVersion.version, newVersion.version)
+            def commitLog = getCommitLog(oldVersion.version, newVersion.version, config.git.repositoryRoot)
+            commits[oldVersion.name] = []
             commitLog.each {c ->
-                commits[oldVersion.name].add(getCommitDetails(c.key))
+                commits[oldVersion.name].add(
+                        getCommitDetails(c.key, config.git.repositoryRoot+oldVersion.repos[repo.name].name)
+                )
             }
         }
 
@@ -45,17 +59,17 @@ class GitPlugin implements ScrollsPlugin {
                 changeTypeRegexps: 'map types of changes depending on where in the repository they are found. E.g. [api: ".*/api/.*]']
     }
 
-    def getCommitLog(tag1, tag2){
+    def getCommitLog(tag1, tag2, repo){
         //println "Running git log on ${config.repositoryRoot}"
         def command
 
         if (tag1.isInteger() && (tag1.toInteger() == 0)) {
-            command = "${config.git} log  --color=never --pretty=oneline ${tag2}"
+            command = "${config.git.cmd} log  --color=never --pretty=oneline ${tag2}"
         } else {
-            command = "${config.git} log  --color=never --pretty=oneline ${tag1}..${tag2}"
+            command = "${config.git.cmd} log  --color=never --pretty=oneline ${tag1}..${tag2}"
         }
 
-        def result = execCommand(command, config.repositoryRoot as String)
+        def result = execCommand(command, repo)
         def commits = [] as HashMap
         result.stdout.eachLine { l ->
             def match = l =~ /^([a-z0-9]*) (.*)$/
@@ -67,8 +81,8 @@ class GitPlugin implements ScrollsPlugin {
         return commits
     }
 
-    def getCommitDetails(id) {
-        def result = execCommand("${config.git} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", config.repositoryRoot as String)
+    def getCommitDetails(id, repo) {
+        def result = execCommand("${config.git.cmd} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", repo)
         def commitDetails = [] as HashMap
         boolean headerDone = false;
         result.stdout.eachLine { line ->
@@ -107,19 +121,20 @@ class GitPlugin implements ScrollsPlugin {
 
     static def calcSummary(commits) {
         def summary = [
-                nbrOfChanges: commits.size(),
-                nbrOfPeople: commits.collect{it.author}.unique().size(),
-                nbrOfFiles: commits.collect{it.files}.unique().size()
+                nbrOfChanges: commits.collect {it.value}.flatten().size(),
+                nbrOfPeople: commits.collect{it.value}.flatten().collect{it.author}.unique().size(),
+                nbrOfRespoitories: commits.size(),
+                nbrOfFiles: commits.collect{it.value}.flatten().collect{it.files}.flatten().unique().size()
         ]
         return summary
     }
 
     def parseModules(commits) {
         def modules = [] as HashMap
-        commits.each { commit ->
+        commits.collect{it.value}.flatten().each { commit ->
             //println "Analyzing: ${commit}"
             commit.files.each {file ->
-                config.modulesRegexps.each { mod,modRegExp ->
+                config.git.moduleRegexps.each { mod,modRegExp ->
                     println("Checking file ${file} against mod ${mod} and expr ${modRegExp}: " + (file =~ /${modRegExp}/))
                     if (file =~ /${modRegExp}/ ) {
                         commit.module = mod

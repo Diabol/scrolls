@@ -1,4 +1,4 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.plugins
 
 import com.sun.grizzly.http.SelectorThread
 import spock.lang.Shared

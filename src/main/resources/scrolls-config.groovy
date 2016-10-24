@@ -10,7 +10,7 @@ scrolls {
 
 
 git {
-    plugin = "se.diabol.scrolls.GitPlugin"
+    plugin = "se.diabol.scrolls.plugins.GitPlugin"
     inputFrom = "versions"
 
     git = "git --no-pager"
@@ -30,7 +30,7 @@ git {
 }
 
 //github {
-//    plugin = 'se.diabol.scrolls.GitHubPlugin'
+//    plugin = 'se.diabol.scrolls.plugins.GitHubPlugin'
 //    inputFrom = 'versions'
 //
 //    apiUrl = 'https://api.github.com'
@@ -39,7 +39,7 @@ git {
 //}
 
 //jira {
-//    plugin = "se.diabol.scrolls.JiraPlugin"
+//    plugin = "se.diabol.scrolls.plugins.JiraPlugin"
 //    inputFrom = "git"
 //
 //    baseUrl = "https://jira.atlassian.com"

@@ -1,6 +1,7 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.plugins
 
 import com.mashape.unirest.http.Unirest
+import se.diabol.scrolls.engine.ScrollsPlugin
 
 class GitHubPlugin implements ScrollsPlugin {
     def config

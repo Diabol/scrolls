@@ -1,5 +1,6 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.engine
 
+import se.diabol.scrolls.engine.Scrolls
 import spock.lang.Specification
 
 import java.nio.charset.StandardCharsets

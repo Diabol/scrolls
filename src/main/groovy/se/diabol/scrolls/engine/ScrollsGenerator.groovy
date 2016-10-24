@@ -1,4 +1,4 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.engine
 
 import freemarker.cache.ClassTemplateLoader
 import freemarker.cache.FileTemplateLoader

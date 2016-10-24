@@ -21,7 +21,7 @@ apply plugin: 'application'
 
 description = 'An Automated Delivery Report Engine'
 
-mainClassName = 'se.diabol.scrolls.Scrolls'
+mainClassName = 'se.diabol.scrolls.engine.Scrolls'
 
 dependencies {
     compile project(':plugin-api')
