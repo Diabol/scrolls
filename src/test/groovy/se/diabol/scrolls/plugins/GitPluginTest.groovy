@@ -12,21 +12,19 @@ class GitPluginTest extends Specification {
         given: 'a single repository config for the scrolls project'
             Map report = null
             ConfigObject config = new ConfigSlurper().parse("""
-                git {
-                    cmd = "git --no-pager"
-                    repositoryRoot = "./"
-                    moduleRegexps = [
-                        "scrolls": "^/src/.*"
-                    ]
-                    changeTypeRegexps = [
-                        "engine": "^src/main/grovy/se/diabol/scrolls/engine.*",
-                        "plugins": "^src/main/groovy/se/diabol/scrolls/plugins.*",
-                        "config": "^src/main/resources/.*\\\\.groovy",
-                        "templates": "^src/main/resources/.*\\\\.ftl",
-                        "test": ".*/src/test.*",
-                        "buil": ".*/build\\\\.gradle"
-                    ]
-                }
+                cmd = "git --no-pager"
+                repositoryRoot = "./"
+                moduleRegexps = [
+                    "scrolls": "^/src/.*"
+                ]
+                changeTypeRegexps = [
+                    "engine": "^src/main/grovy/se/diabol/scrolls/engine.*",
+                    "plugins": "^src/main/groovy/se/diabol/scrolls/plugins.*",
+                    "config": "^src/main/resources/.*\\\\.groovy",
+                    "templates": "^src/main/resources/.*\\\\.ftl",
+                    "test": ".*/src/test.*",
+                    "buil": ".*/build\\\\.gradle"
+                ]
             """)
             GitPlugin gitPlugin = new GitPlugin(config: config)
 
@@ -63,21 +61,19 @@ class GitPluginTest extends Specification {
                     ]
             ]
             ConfigObject config = new ConfigSlurper().parse("""
-                    git {
-                        cmd = "git --no-pager"
-                        repositoryRoot = "../"
-                        moduleRegexps = [
-                            "scrolls": "src/.*"
-                        ]
-                        changeTypeRegexps = [
-                            "engine": "^src/main/grovy/se/diabol/scrolls/engine.*",
-                            "plugins": "^src/main/groovy/se/diabol/scrolls/plugins.*",
-                            "config": "^src/main/resources/.*\\\\.groovy",
-                            "templates": "^src/main/resources/.*\\\\.ftl",
-                            "test": ".*/src/test.*",
-                            "buil": ".*/build\\\\.gradle"
-                        ]
-                    }
+                    cmd = "git --no-pager"
+                    repositoryRoot = "../"
+                    moduleRegexps = [
+                        "scrolls": "src/.*"
+                    ]
+                    changeTypeRegexps = [
+                        "engine": "^src/main/grovy/se/diabol/scrolls/engine.*",
+                        "plugins": "^src/main/groovy/se/diabol/scrolls/plugins.*",
+                        "config": "^src/main/resources/.*\\\\.groovy",
+                        "templates": "^src/main/resources/.*\\\\.ftl",
+                        "test": ".*/src/test.*",
+                        "buil": ".*/build\\\\.gradle"
+                    ]
                 """)
             GitPlugin gitPlugin = new GitPlugin(config: config)
 

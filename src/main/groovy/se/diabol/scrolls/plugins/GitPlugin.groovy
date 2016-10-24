@@ -21,21 +21,21 @@ class GitPlugin implements ScrollsPlugin {
                 def commitLog = getCommitLog(
                         oldVersion.repos[repo.name].version,
                         newVersion.repos[repo.name].version,
-                        config.git.repositoryRoot+oldVersion.repos[repo.name].name)
+                        config.repositoryRoot+oldVersion.repos[repo.name].name)
                 commits[oldVersion.name] = []
                 commitLog.each {c ->
                     commits[repo.name].add(
-                            getCommitDetails(c.key, config.git.repositoryRoot+oldVersion.repos[repo.name].name)
+                            getCommitDetails(c.key, config.repositoryRoot+oldVersion.repos[repo.name].name)
                     )
                 }
             }
         } else {
             println "Detected single repository configuration"
-            def commitLog = getCommitLog(oldVersion.version, newVersion.version, config.git.repositoryRoot)
+            def commitLog = getCommitLog(oldVersion.version, newVersion.version, config.repositoryRoot)
             commits[oldVersion.name] = []
             commitLog.each {c ->
                 commits[oldVersion.name].add(
-                        getCommitDetails(c.key, config.git.repositoryRoot+oldVersion.repos[repo.name].name)
+                        getCommitDetails(c.key, config.repositoryRoot)
                 )
             }
         }
@@ -64,9 +64,9 @@ class GitPlugin implements ScrollsPlugin {
         def command
 
         if (tag1.isInteger() && (tag1.toInteger() == 0)) {
-            command = "${config.git.cmd} log  --color=never --pretty=oneline ${tag2}"
+            command = "${config.cmd} log  --color=never --pretty=oneline ${tag2}"
         } else {
-            command = "${config.git.cmd} log  --color=never --pretty=oneline ${tag1}..${tag2}"
+            command = "${config.cmd} log  --color=never --pretty=oneline ${tag1}..${tag2}"
         }
 
         def result = execCommand(command, repo)
@@ -82,7 +82,7 @@ class GitPlugin implements ScrollsPlugin {
     }
 
     def getCommitDetails(id, repo) {
-        def result = execCommand("${config.git.cmd} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", repo)
+        def result = execCommand("${config.cmd} show --name-only --format=Commit:%H%nAuthor:%cN<%cE>%nEmail:%aE%nDate:%ci%nMessage:%s%nFiles: ${id}", repo)
         def commitDetails = [] as HashMap
         boolean headerDone = false;
         result.stdout.eachLine { line ->
@@ -134,7 +134,7 @@ class GitPlugin implements ScrollsPlugin {
         commits.collect{it.value}.flatten().each { commit ->
             //println "Analyzing: ${commit}"
             commit.files.each {file ->
-                config.git.moduleRegexps.each { mod,modRegExp ->
+                config.moduleRegexps.each { mod,modRegExp ->
                     println("Checking file ${file} against mod ${mod} and expr ${modRegExp}: " + (file =~ /${modRegExp}/))
                     if (file =~ /${modRegExp}/ ) {
                         commit.module = mod

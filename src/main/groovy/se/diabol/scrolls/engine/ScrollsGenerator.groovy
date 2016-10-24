@@ -83,7 +83,7 @@ class ScrollsGenerator {
 
         println "Collecting data..."
 
-        Map versions = [old: oldVersion.version, new: newVersion.version]
+        Map versions = [old: oldVersion, new: newVersion]
         Map reports = [:]
         Map executions = buildExecutionMap()
 

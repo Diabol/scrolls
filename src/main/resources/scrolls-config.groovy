@@ -13,7 +13,7 @@ git {
     plugin = "se.diabol.scrolls.plugins.GitPlugin"
     inputFrom = "versions"
 
-    git = "git --no-pager"
+    cmd = "git --no-pager"
     repositoryRoot = "./"
     moduleRegexps = [
         "module1": "^/module1/.*",

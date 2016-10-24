@@ -10,8 +10,8 @@ class Scrolls {
             System.exit(ExitCodes.FAILED_TO_PARSE_OPTIONS.value)
         }
 
-        Map oldVersion
-        Map newVersion
+        Map oldVersion = [:]
+        Map newVersion = [:]
         if (options.multirepo) {
             oldVersion = validateMultiRepo(options.'old-version')
             newVersion = validateMultiRepo(options.'new-version')
