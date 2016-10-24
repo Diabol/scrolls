@@ -6,6 +6,8 @@
  */
 scrolls {
     component = "scrolls"
+
+    outputDirectory = "./scrolls-report"
 }
 
 

@@ -11,8 +11,8 @@ import java.nio.charset.StandardCharsets;
 class ScrollsGenerator {
 
     def config
-    Configuration freemarkerConfig
     def plugins
+    Configuration freemarkerConfig
 
     ScrollsGenerator(config, options, plugins) {
         this.config = config
@@ -45,7 +45,7 @@ class ScrollsGenerator {
         return freemarkerConfig
     }
 
-    def generateHtmlReport(Map header, Map reports, String outputFile) {
+    def generateHtmlReport(Map header, Map reports) {
         def templateNameToRead = config.scrolls.templateName ?: 'scrolls-html.ftl'
 
         Template template
@@ -53,27 +53,45 @@ class ScrollsGenerator {
             print "Parsing template ${templateNameToRead}..."
             template = freemarkerConfig.getTemplate(templateNameToRead)
             println "OK"
-        } catch (IOException e) {
+        } catch (all) {
             println "FAIL!"
-            println "ERROR: ${e.message}"
+            throw new RuntimeException(all.message)
+        }
+
+        def parent = new File(config.scrolls.outputDirectory as String)
+        try {
+            print "Preparing output directory ${config.scrolls.outputDirectory}..."
+            prepareOutputDirectory(parent)
+            println "OK"
+        } catch (all) {
+            println "FAIL!"
+            throw all
         }
 
         Map dataModel = [header: header, reports: reports]
-
-        new File(outputFile).withWriter {
+        new File(parent, 'index.html').withWriter {
             try {
                 print "Processing template..."
                 template.process(dataModel, it)
                 println "OK"
             } catch (TemplateException e) {
                 println "FAIL!"
-                println "ERROR: ${e.message}"
-                println "ERROR: DataModel: ${dataModel}"
+                throw new RuntimeException("Failed to process template, dataModel: ${dataModel}.\n${e.message}")
             }
         }
     }
 
-    def generate(Map oldVersion, Map newVersion, String outputFile) {
+    def prepareOutputDirectory(File directory) {
+        if (directory.exists() && directory.isFile()) {
+            throw new RuntimeException("File exists with same name as ${config.scrolls.outputDirectory}. Please rename file, or change output directory.")
+        }
+
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new RuntimeException("Failed to created output directory: ${config.scrolls.outputDirectory}")
+        }
+    }
+
+    def generate(Map oldVersion, Map newVersion) {
         Map header = [
                 component: config.scrolls.component,
                 date: new Date().format("yyyy-MM-dd HH:mm:ss"),
@@ -87,7 +105,7 @@ class ScrollsGenerator {
         Map reports = [:]
         Map executions = buildExecutionMap()
 
-        // Run the plugins that require versions (and make sure we drop them from further execution)
+        // Run the plugins that require versions (and remove them from later execution)
         executions.remove('versions').each {
             print "  from ${it.name}..."
             reports[it.name] = it.plugin.generate(versions)
@@ -116,7 +134,7 @@ class ScrollsGenerator {
             }
         }
 
-        generateHtmlReport(header, reports, outputFile)
+        generateHtmlReport(header, reports)
     }
 
     def buildExecutionMap() {
