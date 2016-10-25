@@ -33,8 +33,13 @@ class Scrolls {
         }
 
         def (config, plugins) = initialize(options)
-        // CLI takes precedence over config file
+
+        // Set output directory where CLI takes precedence over config file and fail if it already exists (would mean overwrite!)
         config.scrolls.outputDirectory = options.output ?: config.scrolls.outputDirectory
+        if (new File(config.scrolls.outputDirectory as String).exists()) {
+            println "ERROR: Output directory already exists, bailing out"
+            System.exit ExitCodes.RUNTIME_FAILURE
+        }
 
         try {
             def scrollsGenerator = new ScrollsGenerator(config, options, plugins)
@@ -166,7 +171,7 @@ class Scrolls {
 
     static Map initializePlugins(config) {
         def plugins = [:]
-        println "Scanning config for plugins..."
+        println "Scanning config for plugins"
         config.each { key, items ->
             if (key != 'scrolls') { // Ignore scrolls config section, all other sections are assumed to be plugin sections
                 items.outputDirectory = config.scrolls.outputDirectory
