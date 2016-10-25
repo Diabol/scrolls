@@ -102,9 +102,11 @@ class JiraPlugin implements ScrollsPlugin {
 
     @Override
     List getImageResources() {
-        return icons.values().collect {
-            "/jira-images/${it}"
+        def resources = icons.values().collect {
+            "/images/jira/${it}"
         }
+
+        return resources.unique(false)
     }
 
     def getProjects() {
@@ -195,6 +197,6 @@ class JiraPlugin implements ScrollsPlugin {
             icon = normalizedType
         }
 
-        return "images/${icons[icon]}"
+        return "images/${name}/${icons[icon]}"
     }
 }
