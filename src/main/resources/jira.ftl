@@ -1,5 +1,5 @@
-<!-- Jira section -->
 <#if report??>
+    <h2>Jira issues</h2>
     <p>${report.summary.nbrOfIssues} Jira issues from ${report.summary.nbrOfStories} stories and ${report.summary.nbrOfEpics} epics affected</p>
     <ul>
         <#list report.issues as issue>
