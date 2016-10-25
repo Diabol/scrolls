@@ -26,7 +26,9 @@
             <td>${pr.to}</td>
         </tr>
         </#list>
+    </table>
     <#else>
         There are no open pull requests
     </#if>
+</div>
 </#if>
