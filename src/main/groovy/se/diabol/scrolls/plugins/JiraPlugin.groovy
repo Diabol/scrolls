@@ -3,13 +3,17 @@ package se.diabol.scrolls.plugins
 import com.mashape.unirest.http.Unirest
 
 class JiraPlugin implements ScrollsPlugin {
-    def iconEpic
-    def iconBug
-    def iconStory
-    def iconTask
-    def iconFeature
 
     def config
+
+    def icons = [
+            bug: 'bug.svg',
+            epic: 'epic.svg',
+            feature: 'feature.svg',
+            improvement: 'feature.svg',
+            story: 'story.svg',
+            task: 'task.svg'
+    ]
 
     @Override
     String getName() {
@@ -18,25 +22,13 @@ class JiraPlugin implements ScrollsPlugin {
 
     @Override
     Map generate(Map input) {
-        def projects = getProjects()
-        def projectKeys = projects.collect { it.key }
-        def jiraRefs = [] as HashSet
-        // iterate through all commit comments and match against jira refs for each project key
-        input.commits.each { message ->
-            projectKeys.each { key ->
-                def matcher = message =~ /(?i)(?:^|:|,|'|"|\/|\s+)($key-\d+)/ // match key exactly at beginning of line, after comma, after colon, or after whitespace. This will prevent false matches, for example project 'AM' matching in 'BAM'
-                matcher.each { m ->
-                    jiraRefs.add(m[1].trim())
-                }
-            }
-        }
-
         def issues = []
         def nbrOfIssues = 0
         def nbrOfStories = 0
         def nbrOfEpics = 0
 
-        // iterate issues and get info from jira
+        def jiraRefs = getKeysFromCommits(input.commits)
+
         jiraRefs.each { key ->
             def json = getIssue(key)
 
@@ -46,20 +38,13 @@ class JiraPlugin implements ScrollsPlugin {
                     def currentState = json.fields.status.name
                     def releasedState = issueReleased(releaseDate, currentState)
 
-                    //println "** Release date for linked issue: ${json.fields.customfield_10058}"
-                    //println "** Status for linked issue: ${json.fields.status.name}"
-                    //println "** Released already: ${releasedState}"
-
-
                     if (config.omitClosed && releasedState) {
-                        //println "** --> Issue " + key + " skipped as it has already been released."
+                        // Ignoring issue key as it has already been released
                         return
                     }
                 }
 
-                def added = addIssueToEpicIfApplicable(issues, json)
-                boolean epicAdded  = added[0]
-                boolean storyAdded = added[1]
+                def (epicAdded, storyAdded) = addIssueToEpicIfApplicable(issues, json)
 
                 if (!storyAdded) {
                     def issueIcon = getIssueIcon(json.fields.issuetype.name)
@@ -75,7 +60,7 @@ class JiraPlugin implements ScrollsPlugin {
                     ])
                 }
 
-                if ((epicAdded) || "Epic" == json.fields.issuetype.name) {
+                if (epicAdded || "Epic" == json.fields.issuetype.name) {
                     nbrOfEpics++
                 } else if (storyAdded) {
                     nbrOfStories++
@@ -89,6 +74,23 @@ class JiraPlugin implements ScrollsPlugin {
         return [summary: [nbrOfIssues: nbrOfIssues, nbrOfStories: nbrOfStories, nbrOfEpics: nbrOfEpics], issues: issues]
     }
 
+    HashSet getKeysFromCommits(commits) {
+        def projectKeys = projects.collect { it.key }
+
+        def jiraRefs = [] as HashSet
+        // Scan all commit comments for project key references
+        commits.each { message ->
+            projectKeys.each { key ->
+                def matcher = message =~ /(?i)(?:^|:|,|'|"|\/|\s+)($key-\d+)/ // match key exactly at beginning of line, after comma, after colon, or after whitespace. This will prevent false matches, for example project 'AM' matching in 'BAM'
+                matcher.each { m ->
+                    jiraRefs.add(m[1].trim())
+                }
+            }
+        }
+
+        return jiraRefs
+    }
+
     @Override
     Map getConfigInfo() {
         return [baseUrl: 'The JIRA server instance base url',
@@ -98,13 +100,18 @@ class JiraPlugin implements ScrollsPlugin {
                 inputFrom: 'git (this plugin parses git commit logs for issue keys!']
     }
 
+    @Override
+    List getImageResources() {
+        return icons.values().collect {
+            "/jira-images/${it}"
+        }
+    }
+
     def getProjects() {
-        //print "Fetching jira project\t"
         return doQuery("${config.baseUrl}/rest/api/latest/project")
     }
 
     def getIssue(key) {
-        //print "Fetching jira issue: ${key}\t"
         return doQuery("${config.baseUrl}/rest/api/latest/issue/${key}")
     }
 
@@ -126,7 +133,7 @@ class JiraPlugin implements ScrollsPlugin {
         }
     }
 
-    def issueReleased(releaseDate, currentState) {
+    static def issueReleased(releaseDate, currentState) {
         def currentDate = new Date()
         return (releaseDate.before(currentDate) && (currentState in ['In use', 'Closed']))
     }
@@ -161,7 +168,7 @@ class JiraPlugin implements ScrollsPlugin {
                     title: newEpic.fields.summary,
                     link: "${config.baseUrl}/browse/${newEpic.key}",
                     type: newEpic.fields.issuetype.name,
-                    icon: iconEpic,
+                    icon: getIssueIcon('epic'),
                     stories: [
                                 [
                                    key: check.key,
@@ -178,17 +185,16 @@ class JiraPlugin implements ScrollsPlugin {
             }
         }
 
-        return [epicAdded, storyAdded]
+        return new Tuple(epicAdded, storyAdded)
     }
 
-    def getIssueIcon(type) {
-        switch(type) {
-            case "Epic":  return iconEpic
-            case "Bug":   return iconBug
-            case "Story": return iconStory
-            case "Task":  return iconTask
-            case "Service Request": return iconFeature
-            default:      return iconTask
+    def getIssueIcon(String type) {
+        def normalizedType = type.toLowerCase()
+        def icon = 'task'
+        if (normalizedType in icons.keySet()) {
+            icon = normalizedType
         }
+
+        return "images/${icons[icon]}"
     }
 }

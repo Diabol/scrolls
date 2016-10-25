@@ -57,6 +57,11 @@ class GitPlugin implements ScrollsPlugin {
                 changeTypeRegexps: 'map types of changes depending on where in the repository they are found. E.g. [api: ".*/api/.*]']
     }
 
+    @Override
+    List getImageResources() {
+        return []
+    }
+
     def getCommitLog(tag1, tag2, repo){
         //println "Running git log on ${config.repositoryRoot}"
         def command
