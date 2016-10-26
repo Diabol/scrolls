@@ -1,4 +1,4 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.engine
 
 
 enum ExitCodes {

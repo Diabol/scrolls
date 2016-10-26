@@ -1,4 +1,4 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.engine
 
 import freemarker.cache.ClassTemplateLoader
 import freemarker.cache.FileTemplateLoader
@@ -73,12 +73,12 @@ class ScrollsGenerator {
         }
     }
 
-    def generate(String oldVersion, String newVersion, String outputFile) {
+    def generate(Map oldVersion, Map newVersion, String outputFile) {
         Map header = [
                 component: config.scrolls.component,
                 date: new Date().format("yyyy-MM-dd HH:mm:ss"),
-                oldVersion: oldVersion,
-                newVersion: newVersion,
+                oldVersion: oldVersion.version,
+                newVersion: newVersion.version,
         ]
 
         println "Collecting data..."

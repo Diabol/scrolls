@@ -1,4 +1,4 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.plugins
 
 /**
  * This interface must be implemented by plugins. Scrolls will find plugins implementing this interface and invoke the

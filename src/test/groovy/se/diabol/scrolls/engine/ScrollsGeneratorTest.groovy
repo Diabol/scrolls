@@ -1,4 +1,4 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.engine
 
 import spock.lang.Specification
 
@@ -32,17 +32,20 @@ class ScrollsGeneratorTest extends Specification {
     def gitDataMock = [
             summary: [
                     nbrOfChanges: 155,
+                    nbrOfRepositories: 1,
                     nbrOfPeople: 3,
                     nbrOfFiles: 20
             ],
             modules: [],
-            commits: [[
-                    rev: "rev",
-                    author: "me",
-                    date: new Date(),
-                    message: "DM-666 The evil bug fixed",
-                    files: new ArrayList<>(),
-                    nbrOfFiles: 0
+            commits: [scrolls: [
+                    [
+                        rev: "rev",
+                        author: "me",
+                        date: new Date(),
+                        message: "DM-666 The evil bug fixed",
+                        files: new ArrayList<>(),
+                        nbrOfFiles: 0
+                    ]
             ]]
     ]
 

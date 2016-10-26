@@ -1,4 +1,4 @@
-package se.diabol.scrolls
+package se.diabol.scrolls.plugins
 /**
  * Created with IntelliJ IDEA.
  * User: andreas

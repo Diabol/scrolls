@@ -10,10 +10,10 @@ scrolls {
 
 
 git {
-    plugin = "se.diabol.scrolls.GitPlugin"
+    plugin = "se.diabol.scrolls.plugins.GitPlugin"
     inputFrom = "versions"
 
-    git = "git --no-pager"
+    cmd = "git --no-pager"
     repositoryRoot = "./"
     moduleRegexps = [
         "module1": "^/module1/.*",
@@ -29,17 +29,17 @@ git {
     ]
 }
 
-github {
-    plugin = 'se.diabol.scrolls.GitHubPlugin'
-    inputFrom = 'versions'
-
-    apiUrl = 'https://api.github.com'
-    owner = 'Diabol'
-    repo = 'scrolls'
-}
+//github {
+//    plugin = 'se.diabol.scrolls.plugins.GitHubPlugin'
+//    inputFrom = 'versions'
+//
+//    apiUrl = 'https://api.github.com'
+//    owner = 'Diabol'
+//    repo = 'scrolls'
+//}
 
 //jira {
-//    plugin = "se.diabol.scrolls.JiraPlugin"
+//    plugin = "se.diabol.scrolls.plugins.JiraPlugin"
 //    inputFrom = "git"
 //
 //    baseUrl = "https://jira.atlassian.com"
