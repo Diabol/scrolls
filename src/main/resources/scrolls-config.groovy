@@ -21,11 +21,12 @@ git {
         "Scrolls": "^src/.*",
     ]
     changeTypeRegexps = [
+        "build": ".*build\\.gradle",
+        "config": ".*src/main/resources.*\\.groovy",
+        "ftl": ".*\\.ftl",
+        "images": ".*resources/images/.*",
         "source": ".*src/main/groovy/.*",
         "test": ".*src/test/groovy/.*",
-        "config": ".*src/main/resources.*\\.groovy",
-        "build": ".*build\\.gradle",
-        "ftl": ".*\\.ftl"
     ]
 }
 
