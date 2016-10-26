@@ -10,7 +10,6 @@ scrolls {
     outputDirectory = "./scrolls-report"
 }
 
-
 git {
     plugin = "se.diabol.scrolls.plugins.GitPlugin"
     inputFrom = "versions"
@@ -18,16 +17,15 @@ git {
     cmd = "git --no-pager"
     repositoryRoot = "./"
     moduleRegexps = [
-        "module1": "^/module1/.*",
-        "module2": "^/module2/.*",
-        "module3": "^/module3/.*"
+        "Api": "^plugin-api/.*",
+        "Scrolls": "^src/.*",
     ]
     changeTypeRegexps = [
-        "api": ".*/api/.*",
-        "java": ".*/src/main/java.*",
-        "test": ".*/src/test/java.*",
-        "config": ".*/src/main/resources.*\\.xml",
-        "build": ".*/build\\.gradle"
+        "source": ".*src/main/groovy/.*",
+        "test": ".*src/test/groovy/.*",
+        "config": ".*src/main/resources.*\\.groovy",
+        "build": ".*build\\.gradle",
+        "ftl": ".*\\.ftl"
     ]
 }
 

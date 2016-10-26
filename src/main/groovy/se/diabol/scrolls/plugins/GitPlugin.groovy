@@ -62,8 +62,7 @@ class GitPlugin implements ScrollsPlugin {
         return []
     }
 
-    def getCommitLog(tag1, tag2, repo){
-        //println "Running git log on ${config.repositoryRoot}"
+    def getCommitLog(tag1, tag2, repo) {
         def command
 
         if (tag1.isInteger() && (tag1.toInteger() == 0)) {
@@ -80,7 +79,6 @@ class GitPlugin implements ScrollsPlugin {
                 commits.put(match[0][1],match[0][2])
             }
         }
-        //println "Found ${commits.size()} commits:\n${commits}"
         return commits
     }
 
@@ -135,24 +133,19 @@ class GitPlugin implements ScrollsPlugin {
     def parseModules(commits) {
         def modules = [] as HashMap
         commits.collect{it.value}.flatten().each { commit ->
-            //println "Analyzing: ${commit}"
             commit.files.each {file ->
                 config.moduleRegexps.each { mod,modRegExp ->
-                    println("Checking file ${file} against mod ${mod} and expr ${modRegExp}: " + (file =~ /${modRegExp}/))
                     if (file =~ /${modRegExp}/ ) {
                         commit.module = mod
                         def changeTypes = [] as HashSet
                         config.changeTypeRegexps.each { tag,tagRegExp ->
-                            println "Matching: '${file}' with change type regexp: '${tagRegExp}'"
                             if (file =~ /${tagRegExp}/) {
-                                println "Matched! Adding changetype: '${tag}'"
                                 changeTypes.add(tag)
                             }
                         }
                         if (changeTypes.isEmpty()) {
                             changeTypes.add("other")
                         }
-                        //println "Matched '${file}' against '${modRegExp}'! Adding changed types ${changeTypes} to module ${mod}"
                         if (modules.containsKey(mod)) {
                             modules."${mod}".commits.add(commit.rev)
                             modules."${mod}".people.add(commit.author)
@@ -171,7 +164,6 @@ class GitPlugin implements ScrollsPlugin {
     }
 
     static def execCommand(String command, String workingDirectory='.') {
-        //println "execCommand(${command},${workingDirectory})"
         def proc = command.execute(null as String[], new File(workingDirectory))
         def sout = new StringBuffer()
         def serr = new StringBuffer()
