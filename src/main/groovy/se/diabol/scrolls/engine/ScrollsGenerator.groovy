@@ -140,14 +140,18 @@ class ScrollsGenerator {
                     print "  from ${name} plugin..."
                     resources.each {
                         def sourceURL = plugin.class.getResource(it as String)
-                        def filename = Paths.get(sourceURL.toURI()).getFileName().toString()
-                        def targetDir = Paths.get(imagesDir.absolutePath, name as String)
-                        prepareOutputDirectory(targetDir.toFile())
-                        def targetPath = Paths.get(targetDir.toString(), filename)
-                        if (targetPath.toFile().exists()) {
-                            println "WARN: ${targetPath} already exists (Is the resource listed more than once in getImageResources()?)"
+                        if (!sourceURL) {
+                            println "WARN: ${it} could not be located (Is the resource listed named correctly?)"
                         } else {
-                            Files.copy(Paths.get(sourceURL.toURI()), targetPath)
+                            def filename = Paths.get(sourceURL.toURI()).getFileName().toString()
+                            def targetDir = Paths.get(imagesDir.absolutePath, name as String)
+                            prepareOutputDirectory(targetDir.toFile())
+                            def targetPath = Paths.get(targetDir.toString(), filename)
+                            if (targetPath.toFile().exists()) {
+                                println "WARN: ${targetPath} already exists (Is the resource listed more than once in getImageResources()?)"
+                            } else {
+                                Files.copy(Paths.get(sourceURL.toURI()), targetPath)
+                            }
                         }
                     }
                     println "OK"
