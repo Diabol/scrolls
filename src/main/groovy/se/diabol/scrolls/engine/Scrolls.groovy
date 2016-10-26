@@ -1,6 +1,7 @@
 package se.diabol.scrolls.engine
 
 import groovy.json.JsonSlurper
+import se.diabol.scrolls.plugins.ScrollsPlugin
 
 class Scrolls {
     static void main(String[] args) {

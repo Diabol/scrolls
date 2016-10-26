@@ -1,7 +1,5 @@
 package se.diabol.scrolls.plugins
 
-import se.diabol.scrolls.engine.ScrollsPlugin
-
 class GitPlugin implements ScrollsPlugin {
 
     def config
