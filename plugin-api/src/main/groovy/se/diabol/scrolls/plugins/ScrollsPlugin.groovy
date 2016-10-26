@@ -35,8 +35,9 @@ interface ScrollsPlugin {
     Map getConfigInfo()
 
     /**
-     * This method will be invoked as part of the template rendering. If the plugin has resources they should be given
-     * in a list. Scrolls will make sure they are copied to the correct place.
+     * This method will be invoked just after the template has been processed. The plugin is responsible for setting the
+     * correct paths in it's template. Resources from here will be searched for using getResource() and copied to the
+     * images/${plugin.name}/ folder.
      * @return List of image resource names that will be copied (if they exist).
      */
     List getImageResources()
