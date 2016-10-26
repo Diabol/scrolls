@@ -22,7 +22,32 @@ Scrolls main interface is it's configuration file and it's command line interfac
 
 Developers can run using gradle: 
 
+```
     gradle run -Drun.args="--old-version 1.0.0 --new-version 2.0.0"
+```
+
+### Using Scrolls with multiple repositories
+Scrolls also supports report generation over multipe repositories. This is a typical scenario when you have dependencies
+components that need to to be syncronized in a coordinated release. In this case you can view the version of the system
+as a set of components unique versions. The unique combination of versioned components compose a unique version of the
+entire system. The format for specifying a multi repo version is JSON:
+
+```
+{
+    "name": "scrolls",
+    "version": "1.0.0",
+    "repos": {
+        "scrolls-core": {"name": "scrolls-core", "version": "1.0.0"},
+        "scrolls-api": {"name": "scrolls-api", "version": "1.0.0"},
+    }
+}
+```
+
+Use the `--multirepo (-m)` option to tell scrolls to process the version input as multiple repositories. You can
+reference the json as files:
+```
+    scrolls --multirepo --old-version file://version-1.0.0.json --new-version file://version-1.0.1.json
+```
 
 ## Plugins
 Plugins are built by implementing the ScrollsPlugin interface and configuring them in the configuration file. Scrolls 
