@@ -1,5 +1,8 @@
 package se.diabol.scrolls.plugins
 
+import groovy.json.JsonBuilder
+import net.sf.json.JSONObject
+import se.diabol.scrolls.engine.ScrollsGenerator
 import se.diabol.scrolls.plugins.GitPlugin
 import spock.lang.Specification
 
@@ -81,7 +84,7 @@ class GitPluginTest extends Specification {
             report = gitPlugin.generate([old: oldVersion, new: newVersion])
 
         then: 'the report should contain 1 commits from 1 person with 7 files changed'
-            println report
+            println new JsonBuilder(report).toPrettyString()
             report != null
             report.summary.nbrOfChanges == 1
             report.summary.nbrOfPeople == 1

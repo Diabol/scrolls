@@ -33,27 +33,29 @@
     </table>
 </div>
 <div>
-    <h2>Change Log</h2>
-    <div id="commitLog">
-        <#list report.commits as commit>
-            <div class="commit" id="${commit.rev}">
-                <div class="commitHeader">
+    <#list report.commits as key, commitList>
+        <h2>Change Log: ${key}</h2>
+        <div id="commitLog.${key}">
+            <#list commitList as commit>
+                <div class="commit" id="${commit.rev}">
+                    <div class="commitHeader">
 
-                    <a class="commitId" href="#">${commit.rev}</a>
-                    <span class="commitDate">${commit.date?string("yyyy-MM-dd HH:mm:ss")}</span>
-                    <span class="commitAuthor">${commit.author}</span>
+                        <a class="commitId" href="#">${commit.rev}</a>
+                        <span class="commitDate">${commit.date?string("yyyy-MM-dd HH:mm:ss")}</span>
+                        <span class="commitAuthor">${commit.author}</span>
+                    </div>
+                    <div class="commitMessage">
+                    ${commit.message} <a href="#" onclick="toggleVisibility('${commit.rev}-details')">[${commit.files?size} files]</a>
+                    </div>
+                    <div class="commitDetails hide" id="${commit.rev}-details">
+                        <ul>
+                            <#list commit.files as files>
+                                <li class="commitFile">${files}</li>
+                            </#list>
+                        </ul>
+                    </div>
                 </div>
-                <div class="commitMessage">
-                ${commit.message} <a href="#" onclick="toggleVisibility('${commit.rev}-details')">[${commit.files?size} files]</a>
-                </div>
-                <div class="commitDetails hide" id="${commit.rev}-details">
-                    <ul>
-                        <#list commit.files as files>
-                            <li class="commitFile">${files}</li>
-                        </#list>
-                    </ul>
-                </div>
-            </div>
-        </#list>
-    </div>
+            </#list>
+        </div>
+    </#list>
 </#if>
