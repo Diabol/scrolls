@@ -1,6 +1,5 @@
 package se.diabol.scrolls.engine
 
-import se.diabol.scrolls.engine.Scrolls
 import spock.lang.Specification
 
 import java.nio.charset.StandardCharsets
@@ -43,7 +42,7 @@ class ScrollsTest extends Specification {
 
     def "multirepo config as json file should be read and validated" () {
         setup:
-            def versionMap = null
+            def versionMap
             def version = new File('version.json')
             version.write("""{
                 "name": "scrolls",
