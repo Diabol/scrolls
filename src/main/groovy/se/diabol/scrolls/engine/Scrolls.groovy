@@ -7,7 +7,7 @@ class Scrolls {
     static void main(String[] args) {
         def options = parseOptions(args)
         if (!options) {
-            println "Failed to parse options"
+            System.err.println "Failed to parse options"
             System.exit ExitCodes.FAILED_TO_PARSE_OPTIONS
         }
 
@@ -37,7 +37,7 @@ class Scrolls {
         // Set output directory where CLI takes precedence over config file and fail if it already exists (would mean overwrite!)
         config.scrolls.outputDirectory = options.output ?: config.scrolls.outputDirectory
         if (new File(config.scrolls.outputDirectory as String).exists()) {
-            println "ERROR: Output directory already exists, bailing out"
+            System.err.println "ERROR: Output directory already exists, bailing out"
             System.exit ExitCodes.RUNTIME_FAILURE
         }
 
@@ -46,7 +46,7 @@ class Scrolls {
             scrollsGenerator.generate(oldVersion, newVersion)
         } catch (all) {
             def msg = "ERROR: Failed to create scrolls for versions ${options.'old-version'} to ${options.'new-version'}"
-            println msg
+            System.err.println msg
             all.printStackTrace()
             System.exit ExitCodes.RUNTIME_FAILURE
         }
@@ -68,7 +68,7 @@ class Scrolls {
         try {
             config = readConfig(options.config)
         } catch (all) {
-            println "ERROR: ${all.message}, aborting..."
+            System.err.println "ERROR: ${all.message}, aborting..."
             System.exit ExitCodes.FAILED_TO_PARSE_CONFIG
         }
 
@@ -78,7 +78,7 @@ class Scrolls {
         try {
             plugins = initializePlugins(config)
         } catch (RuntimeException e) {
-            println "ERROR: ${e.message}, aborting..."
+            System.err.println "ERROR: ${e.message}, aborting..."
             System.exit ExitCodes.FAILED_TO_INITIALIZE
         }
 
@@ -91,7 +91,7 @@ class Scrolls {
 
         config.each { key, values ->
             if (key != 'scrolls' && !(values.inputFrom in availableInputs)) {
-                println "ERROR: Config section ${key} is configured with inputFrom: ${values.inputFrom}, but ${values.inputFrom} does not exist in the configuration. Possibly typo?"
+                System.err.println "ERROR: Config section ${key} is configured with inputFrom: ${values.inputFrom}, but ${values.inputFrom} does not exist in the configuration. Possibly typo?"
                 System.exit ExitCodes.FAILED_TO_PARSE_CONFIG
             }
         }
@@ -101,11 +101,11 @@ class Scrolls {
         def valid = true
         // We avoid using required: with CliBuilder, as it reports errors when only --help is used.
         if (!options.'old-version') {
-            println "ERROR: Missing required option: old-version"
+            System.err.println "ERROR: Missing required option: old-version"
             valid = false
         }
         if (!options.'new-version') {
-            println "ERROR: Missing required option: new-version"
+            System.err.println "ERROR: Missing required option: new-version"
             valid = false
         }
 
