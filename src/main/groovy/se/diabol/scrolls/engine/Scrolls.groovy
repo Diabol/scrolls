@@ -11,6 +11,15 @@ class Scrolls {
             System.exit ExitCodes.FAILED_TO_PARSE_OPTIONS
         }
 
+        if (options.help) {
+            displayPluginHelp(options)
+            System.exit ExitCodes.OK
+        }
+
+        if (!validateRequiredOptions(options)) {
+            System.exit ExitCodes.MISSING_REQUIRED_OPTIONS
+        }
+
         Map oldVersion = [:]
         Map newVersion = [:]
         if (options.multirepo) {
@@ -21,15 +30,6 @@ class Scrolls {
             oldVersion.version = options.'old-version'
             newVersion.name = options.name? options.name : ''
             newVersion.version = options.'new-version'
-        }
-
-        if (options.help) {
-            displayPluginHelp(options)
-            System.exit ExitCodes.OK
-        }
-
-        if (!validateRequiredOptions(options)) {
-            System.exit ExitCodes.MISSING_REQUIRED_OPTIONS
         }
 
         def (config, plugins) = initialize(options)
