@@ -1,43 +1,62 @@
 package se.diabol.scrolls.engine
 
+import org.junit.Rule
+import org.junit.contrib.java.lang.system.Assertion
+import org.junit.contrib.java.lang.system.ExpectedSystemExit
+import org.junit.contrib.java.lang.system.SystemOutRule
+import org.junit.contrib.java.lang.system.internal.CheckExitCalled
 import spock.lang.Specification
-
-import java.nio.charset.StandardCharsets
 
 class ScrollsTest extends Specification {
 
-    private PrintStream outBefore
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
-    private def setup() {
-        outBefore = System.out
-    }
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog()
 
-    private def cleanup() {
-        System.setOut(outBefore)
+    def setup() {
+        systemOutRule.clearLog()
     }
 
     def "should display help when help option provided"() {
-        given:
-        final ByteArrayOutputStream sout = new ByteArrayOutputStream()
-        System.out = new PrintStream(sout)
+        expect:
+        exit.expectSystemExitWithStatus(0)
+        exit.checkAssertionAfterwards(new Assertion() {
+            @Override
+            void checkAssertion() throws Exception {
+                assert systemOutRule.getLog().contains('usage: scrolls')
+                assert !systemOutRule.getLog().contains('ERROR')
+            }
+        })
 
-        when: 'help option provided'
-        Scrolls.invokeMethod('main', ['--help'].toArray())
-
-        then: 'output contains usage message'
-        sout.toString(StandardCharsets.UTF_8.name()).contains('usage: scrolls')
+        invokeMainWithArgs(['--help'])
     }
 
-    def "no scrolls generated when version options are missing"() {
-        given:
-        final ByteArrayOutputStream sout = new ByteArrayOutputStream()
-        System.out = new PrintStream(sout)
+    def "should display error for missing required option old-version when it's not provided"() {
+        expect:
+        exit.expectSystemExit()
+        exit.checkAssertionAfterwards(new Assertion() {
+            @Override
+            void checkAssertion() throws Exception {
+                assert systemOutRule.getLog().contains('ERROR: Missing required option: old-version')
+            }
+        })
 
-        when: 'no options are provided'
-        Scrolls.invokeMethod('main', [].toArray())
+        invokeMainWithArgs([])
+    }
 
-        then: 'output contains error message'
-        sout.toString(StandardCharsets.UTF_8.name()).contains('error: Missing required options: old-version, new-version')
+    def "should display error for missing required option new-version when it's not provided"() {
+        expect:
+        exit.expectSystemExit()
+        exit.checkAssertionAfterwards(new Assertion() {
+            @Override
+            void checkAssertion() throws Exception {
+                assert systemOutRule.getLog().contains('ERROR: Missing required option: new-version')
+            }
+        })
+
+        invokeMainWithArgs(['--old-version', '1.0.0'])
     }
 
     def "multirepo config as json file should be read and validated" () {
@@ -92,4 +111,11 @@ class ScrollsTest extends Specification {
             versionMap.repos['scrolls-core'].version.equals('1.0.0')
     }
 
+    private static void invokeMainWithArgs(args) {
+        try {
+            Scrolls.main(args as String[])
+        } catch (CheckExitCalled ignored) {
+            // We have to ignore this due to how System.exit and ExpectedSystemExit seems to work to avoid exiting the test prematurely
+        }
+    }
 }

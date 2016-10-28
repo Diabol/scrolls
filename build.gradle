@@ -39,6 +39,7 @@ dependencies {
         transitive = false // this avoids affecting your version of Groovy/Spock
     }
     testCompile group: 'com.sun.grizzly', name: 'grizzly-comet-webserver', version:'1.9.64'
+    testCompile 'com.github.stefanbirkner:system-rules:1.16.0'
 }
 
 task uberjar(type: Jar, dependsOn:[':compileJava',':compileGroovy']) {
