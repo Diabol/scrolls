@@ -103,7 +103,7 @@ class ScrollsGenerator {
                     executions[it].each {
                         print "  from ${it.name}..."
                         reports[it.name] = it.plugin.generate(reports[it.config.inputFrom])
-                        println "OK"
+                        println "OK: ${reports[it.name]}"
                     }
                     executions.remove(it)
                 } else {

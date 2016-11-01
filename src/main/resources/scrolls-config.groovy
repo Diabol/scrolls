@@ -38,12 +38,21 @@ git {
 //    repo = 'scrolls'
 //}
 
-//jira {
-//    plugin = "se.diabol.scrolls.plugins.JiraPlugin"
-//    inputFrom = "git"
-//
-//    baseUrl = "https://jira.atlassian.com"
-//    username = "scrolls"
-//    password = "password"
-//    omitClosed = true
-//}
+jiraCommitParser {
+    plugin = "se.diabol.scrolls.plugins.JiraCommitParserPlugin"
+    inputFrom = "git"
+
+    baseUrl = "https://orbra7.atlassian.net"
+    username = "andreas@diabol.se"
+    password = "Hcm400tc"
+}
+
+jira {
+    plugin = "se.diabol.scrolls.plugins.JiraPlugin"
+    inputFrom = "jiraCommitParser"
+
+    baseUrl = "https://orbra7.atlassian.net"
+    username = "andreas@diabol.se"
+    password = "Hcm400tc"
+    omitClosed = true
+}
