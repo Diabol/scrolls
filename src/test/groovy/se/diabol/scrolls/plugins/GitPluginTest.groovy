@@ -1,9 +1,6 @@
 package se.diabol.scrolls.plugins
 
 import groovy.json.JsonBuilder
-import net.sf.json.JSONObject
-import se.diabol.scrolls.engine.ScrollsGenerator
-import se.diabol.scrolls.plugins.GitPlugin
 import spock.lang.Specification
 
 /**

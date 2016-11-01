@@ -57,13 +57,13 @@ it's up to the plugin author to make sure the plugin works with the input it wil
 required input).
 
 ## Reports
-Reports are based on FreeMarker templates with a default report layout provided. Users are free to override the global 
-template, the stylesheet or individual parts of the template (there's one individual part per plugin). Overrides work by 
+Reports are based on FreeMarker templates with a default report layout provided (HTML). Users are free to override the 
+global template, the stylesheet or individual templates (there's one individual template per plugin). Overrides work by 
 using the --templates option. Specify a directory and place your own .ftl files in this directory, naming them to 
-indicate which template you want to override (as explains in the below list).
+indicate which template you want to override.
 
  * scrolls-html.ftl for the main/global template
- * &lt;pluginname&gt;.ftl to override just a plugins part of the template (e.g. git.ftl)
- * scrolls.css to override the stylesheet used (It too is a FreeMarker template, just named differently)
+ * scrolls-css.ftl to override the stylesheet used
+ * &lt;pluginname&gt;.ftl to override a plugin template (e.g. git.ftl or github.ftl)
 
 ## Extend

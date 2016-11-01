@@ -3,6 +3,7 @@ package se.diabol.scrolls.engine
 import org.junit.Rule
 import org.junit.contrib.java.lang.system.Assertion
 import org.junit.contrib.java.lang.system.ExpectedSystemExit
+import org.junit.contrib.java.lang.system.SystemErrRule
 import org.junit.contrib.java.lang.system.SystemOutRule
 import org.junit.contrib.java.lang.system.internal.CheckExitCalled
 import spock.lang.Specification
@@ -15,8 +16,12 @@ class ScrollsTest extends Specification {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog()
 
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog()
+
     def setup() {
         systemOutRule.clearLog()
+        systemErrRule.clearLog()
     }
 
     def "should display help when help option provided"() {
@@ -26,7 +31,7 @@ class ScrollsTest extends Specification {
             @Override
             void checkAssertion() throws Exception {
                 assert systemOutRule.getLog().contains('usage: scrolls')
-                assert !systemOutRule.getLog().contains('ERROR')
+                assert !systemErrRule.getLog().contains('ERROR')
             }
         })
 
@@ -39,7 +44,7 @@ class ScrollsTest extends Specification {
         exit.checkAssertionAfterwards(new Assertion() {
             @Override
             void checkAssertion() throws Exception {
-                assert systemOutRule.getLog().contains('ERROR: Missing required option: old-version')
+                assert systemErrRule.getLog().contains('ERROR: Missing required option: old-version')
             }
         })
 
@@ -52,7 +57,7 @@ class ScrollsTest extends Specification {
         exit.checkAssertionAfterwards(new Assertion() {
             @Override
             void checkAssertion() throws Exception {
-                assert systemOutRule.getLog().contains('ERROR: Missing required option: new-version')
+                assert systemErrRule.getLog().contains('ERROR: Missing required option: new-version')
             }
         })
 

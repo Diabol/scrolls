@@ -53,4 +53,9 @@ class GitHubPlugin implements ScrollsPlugin {
                 token: 'The oauth/personal access token for the user (token is only for private repositories)',
                 repo: 'The name of the repository']
     }
+
+    @Override
+    List getImageResources() {
+        return []
+    }
 }

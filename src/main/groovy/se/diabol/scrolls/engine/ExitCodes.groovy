@@ -1,16 +1,11 @@
 package se.diabol.scrolls.engine
 
 
-enum ExitCodes {
-    OK(0),
-    FAILED_TO_PARSE_OPTIONS(1),
-    MISSING_REQUIRED_OPTIONS(2),
-    FAILED_TO_INITIALIZE(3),
-    RUNTIME_FAILURE(10)
-
-    final int value
-
-    private ExitCodes(final int value) {
-        this.value = value
-    }
+class ExitCodes {
+    static int OK = 0
+    static int FAILED_TO_PARSE_OPTIONS = 1
+    static int FAILED_TO_PARSE_CONFIG = 2
+    static int MISSING_REQUIRED_OPTIONS = 3
+    static int FAILED_TO_INITIALIZE = 4
+    static int RUNTIME_FAILURE = 10
 }

@@ -30,7 +30,15 @@ interface ScrollsPlugin {
     /**
      * This method should provide a detailed description of the available configuration settings for the plugin. Keys
      * being the options and values being the descriptions of said options.
-     * @return Config options that can be customized in the Scrolls config file
+     * @return Config options that can be customized in the Scrolls config file.
      */
     Map getConfigInfo()
+
+    /**
+     * This method will be invoked just after the template has been processed. The plugin is responsible for setting the
+     * correct paths in it's template. Resources from here will be searched for using getResource() and copied to the
+     * images/${plugin.name}/ folder.
+     * @return List of image resource names that will be copied (if they exist).
+     */
+    List getImageResources()
 }

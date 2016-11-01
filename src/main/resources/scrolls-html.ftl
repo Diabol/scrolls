@@ -4,9 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Scrolls for ${header.component}</title>
-    <style type="text/css">
-        <#include "scrolls.css" parse=false>
-    </style>
+    <link rel="stylesheet" type="text/css" href="css/scrolls.css">
     <script>
         function toggleVisibility(id) {
             var e = document.getElementById(id);
