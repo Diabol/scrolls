@@ -85,6 +85,11 @@ class JiraPlugin implements ScrollsPlugin {
     }
 
     @Override
+    String getTemplateName() {
+        return config.template;
+    }
+
+    @Override
     List getImageResources() {
         def resources = icons.values().collect {
             "/images/jira/${it}"

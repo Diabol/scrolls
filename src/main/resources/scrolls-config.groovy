@@ -13,6 +13,7 @@ scrolls {
 git {
     plugin = "se.diabol.scrolls.plugins.GitPlugin"
     inputFrom = "versions"
+    template = "git.ftl"
 
     cmd = "git --no-pager"
     repositoryRoot = "./"
@@ -51,6 +52,7 @@ jiraCommitParser {
 jira {
     plugin = "se.diabol.scrolls.plugins.JiraPlugin"
     inputFrom = "jiraCommitParser"
+    template = "jira.ftl"
 
     baseUrl = "https://orbra7.atlassian.net"
     username = "andreas@diabol.se"

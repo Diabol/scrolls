@@ -51,11 +51,7 @@ class JiraPluginTest extends Specification {
 
     def "generate should find jira refs and get info from jira api"() {
         when: "calling createJiraReport with a list of 3 commit comments"
-        def issues = jiraPlugin.generate([commits: [
-                "Comment with a correct jira ref EX-1, ok",
-                "comment with an incorrect ref EX-2",
-                "comment without jira ref",
-                "Comment for a deployed issue (Closed and with deploy date) EX-3 that should not be included."]])
+        def issues = jiraPlugin.generate([keys: ["EX-1","EX-2", "EX-3"]])
 
         then: "the result should contain one jira issue"
         issues?.issues?.size() == 1

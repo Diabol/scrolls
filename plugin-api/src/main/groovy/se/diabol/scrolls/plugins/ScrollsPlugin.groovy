@@ -35,6 +35,14 @@ interface ScrollsPlugin {
     Map getConfigInfo()
 
     /**
+     * This method should return the name of the template that is used to render the report. If the plugin does not
+     * provide any report output but acts as input provider to other plugins this method should return null
+     * images/${plugin.name}/ folder.
+     * @return the name of the ftl tempalte or null
+     */
+    String getTemplateName()
+
+    /**
      * This method will be invoked just after the template has been processed. The plugin is responsible for setting the
      * correct paths in it's template. Resources from here will be searched for using getResource() and copied to the
      * images/${plugin.name}/ folder.

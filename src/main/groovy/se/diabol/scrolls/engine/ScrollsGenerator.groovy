@@ -5,6 +5,7 @@ import freemarker.cache.FileTemplateLoader
 import freemarker.cache.MultiTemplateLoader
 import freemarker.cache.TemplateLoader
 import freemarker.template.*
+import se.diabol.scrolls.plugins.ScrollsPlugin
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -53,42 +54,48 @@ class ScrollsGenerator {
                 date: new Date().format("yyyy-MM-dd HH:mm:ss"),
                 oldVersion: oldVersion.version,
                 newVersion: newVersion.version,
+                templates: [:]
         ]
 
         println "Collecting data"
 
         Map versions = [old: oldVersion, new: newVersion]
-        Map reports = [:]
         Map executions = buildExecutionMap()
+        Map reports = [versions: versions]
 
-        // Run the plugins that require versions (and remove them from later execution)
-        executions.remove('versions').each {
-            print "  from ${it.name}..."
-            reports[it.name] = it.plugin.generate(versions)
-            println "OK"
-        }
-
-        // TODO: Replace hackish loopCounter with topological sorting of dependencies (with cycle detection before running!)
-        int loopCounter = 0
-        while (executions.keySet().size() > 0) {
-            def names = executions.keySet()
-            names.each {
-                if (it in reports) {
-                    executions[it].each {
-                        print "  from ${it.name}..."
-                        reports[it.name] = it.plugin.generate(reports[it.config.inputFrom])
-                        println "OK: ${reports[it.name]}"
-                    }
-                    executions.remove(it)
-                } else {
-                    loopCounter += 1
-                }
+        executions.each {name, pluginList ->
+            if (!reports[name]) {
+                throw new RuntimeException("Failed to resolve plugin dependencies: ${name}")
             }
-
-            if (loopCounter == 10) {
-                throw new RuntimeException("Failed to resolve plugin dependencies, please make sure your configuration has no cycles.")
+            Map input = reports[name]
+            pluginList.each {plugin ->
+                print "  from ${plugin.name}..."
+                reports[plugin.name] = plugin.plugin.generate(input)
+                header.templates[plugin.name] = plugin.plugin.getTemplateName()
+                println "OK: ${reports[plugin.name]}"
             }
         }
+
+//        int loopCounter = 0
+//        while (executions.keySet().size() > 0) {
+//            def names = executions.keySet()
+//            names.each {
+//                if (it in reports) {
+//                    executions[it].each {
+//                        print "  from ${it.name}..."
+//                        reports[it.name] = it.plugin.generate(reports[it.config.inputFrom])
+//                        println "OK: ${reports[it.name]}"
+//                    }
+//                    executions.remove(it)
+//                } else {
+//                    loopCounter += 1
+//                }
+//            }
+//
+//            if (loopCounter == 10) {
+//                throw new RuntimeException("Failed to resolve plugin dependencies, please make sure your configuration has no cycles.")
+//            }
+//        }
 
         generateHtmlReport(header, reports)
     }

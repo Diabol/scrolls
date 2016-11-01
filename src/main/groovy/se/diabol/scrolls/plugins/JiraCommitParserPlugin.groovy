@@ -60,6 +60,11 @@ class JiraCommitParserPlugin implements ScrollsPlugin {
     }
 
     @Override
+    String getTemplateName() {
+        return null
+    }
+
+    @Override
     List getImageResources() {
         return null
     }

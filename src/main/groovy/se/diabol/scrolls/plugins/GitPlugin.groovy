@@ -58,6 +58,11 @@ class GitPlugin implements ScrollsPlugin {
     }
 
     @Override
+    String getTemplateName() {
+        return config.template;
+    }
+
+    @Override
     List getImageResources() {
         return []
     }

@@ -34,7 +34,9 @@
 
 <#list reports as name, report>
 <div class="plugin-report">
-    <#include "${name}.ftl">
+    <#if header.templates[name]??>
+        <#include "${header.templates[name]}">
+     </#if>
 </div>
 </#list>
 
