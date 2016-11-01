@@ -16,3 +16,6 @@ classes
 /.classpath
 /.project
 /.settings*
+
+# Scrolls report dir
+scrolls-report/

@@ -1,12 +1,6 @@
 package se.diabol.scrolls.plugins
 
-import groovyx.net.http.EncoderRegistry
-import groovyx.net.http.HTTPBuilder
-
-import java.nio.charset.StandardCharsets
-
-import static groovyx.net.http.ContentType.JSON
-import static groovyx.net.http.Method.GET
+import com.mashape.unirest.http.Unirest
 
 
 /**
@@ -43,27 +37,30 @@ class JiraCommitParserPlugin implements ScrollsPlugin {
     }
 
     private doQuery(String url) {
-        def http = new HTTPBuilder(url)
-        http.encoderRegistry = new EncoderRegistry(charset: StandardCharsets.UTF_8.name())
-        http.request(GET, JSON) { req ->
-            headers.'User-Agent' = 'Mozilla/5.0'
-            headers.'Authorization' = 'Basic ' + "${config.username}:${config.password}".toString().bytes.encodeBase64().toString()
+        def headers = ['User-Agent': 'Mozilla/5.0',
+                       'Authorization': "Basic " + "${config.username}:${config.password}".bytes.encodeBase64().toString()]
+        def request = Unirest.get(url).headers(headers)
+        def response = request.asJson()
 
-            response.success = { resp, json ->
-                println Success: resp.status
-                return json
-            }
+        if (response.status != 200) {
+            println "ERROR: jira - Got status code ${response.status} but expected 200 for ${request.url}"
+            return [:]
+        }
 
-            response.failure = { resp, json ->
-                println Failed: resp.status
-                println json
-                return
-            }
+        if (response.body.isArray()) {
+            return response.body.array
+        } else {
+            return response.body.object
         }
     }
 
     @Override
     Map getConfigInfo() {
         return [pattern: 'regex pattern to serach for JIRA issue keys in commit messages [/(?i)(?:^|:|,|\'|"|\\/|\\s+)($key-\\d+)/]']
+    }
+
+    @Override
+    List getImageResources() {
+        return null
     }
 }

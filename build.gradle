@@ -27,7 +27,6 @@ dependencies {
     compile project(':plugin-api')
 
     compile group: 'org.freemarker', name: 'freemarker', version:'2.3.25-incubating'
-    compile group: 'org.codehaus.groovy.modules.http-builder', name: 'http-builder', version:'0.7.1'
     compile group: 'commons-cli', name: 'commons-cli', version:'1.3.1'
     compile group: 'com.mashape.unirest', name: 'unirest-java', version:'1.4.9'
 
@@ -39,6 +38,7 @@ dependencies {
         transitive = false // this avoids affecting your version of Groovy/Spock
     }
     testCompile group: 'com.sun.grizzly', name: 'grizzly-comet-webserver', version:'1.9.64'
+    testCompile 'com.github.stefanbirkner:system-rules:1.16.0'
 }
 
 task uberjar(type: Jar, dependsOn:[':compileJava',':compileGroovy']) {

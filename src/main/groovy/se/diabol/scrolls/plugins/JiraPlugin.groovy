@@ -1,20 +1,19 @@
 package se.diabol.scrolls.plugins
 
-import groovyx.net.http.*
-
-import java.nio.charset.StandardCharsets
-
-import static groovyx.net.http.ContentType.JSON
-import static groovyx.net.http.Method.*
+import com.mashape.unirest.http.Unirest
 
 class JiraPlugin implements ScrollsPlugin {
-    def iconEpic
-    def iconBug
-    def iconStory
-    def iconTask
-    def iconFeature
 
     def config
+
+    def icons = [
+            bug: 'bug.svg',
+            epic: 'epic.svg',
+            feature: 'feature.svg',
+            improvement: 'feature.svg',
+            story: 'story.svg',
+            task: 'task.svg'
+    ]
 
     @Override
     String getName() {
@@ -30,30 +29,22 @@ class JiraPlugin implements ScrollsPlugin {
         def nbrOfStories = 0
         def nbrOfEpics = 0
 
-        // iterate issues and get info from jira
         jiraRefs.each { key ->
             def json = getIssue(key)
 
             if (json) {
-                if (json.fields.customfield_10058) { // check if the issue has been released, if so, do not include in list
+                if (json.fields.has('customfield_10058')) { // check if the issue has been released, if so, do not include in list
                     def releaseDate = new Date().parse("yyyy-M-d", json.fields.customfield_10058)
                     def currentState = json.fields.status.name
                     def releasedState = issueReleased(releaseDate, currentState)
 
-                    println "** Release date for linked issue: ${json.fields.customfield_10058}"
-                    println "** Status for linked issue: ${json.fields.status.name}"
-                    println "** Released already: ${releasedState}"
-
-
                     if (config.omitClosed && releasedState) {
-                        println "** --> Issue " + key + " skipped as it has already been released."
+                        // Ignoring issue key as it has already been released
                         return
                     }
                 }
 
-                def added = addIssueToEpicIfApplicable(issues, json)
-                boolean epicAdded  = added[0]
-                boolean storyAdded = added[1]
+                def (epicAdded, storyAdded) = addIssueToEpicIfApplicable(issues, json)
 
                 if (!storyAdded) {
                     def issueIcon = getIssueIcon(json.fields.issuetype.name)
@@ -69,7 +60,7 @@ class JiraPlugin implements ScrollsPlugin {
                     ])
                 }
 
-                if ((epicAdded) || "Epic" == json.fields.issuetype.name) {
+                if (epicAdded || "Epic" == json.fields.issuetype.name) {
                     nbrOfEpics++
                 } else if (storyAdded) {
                     nbrOfStories++
@@ -83,6 +74,7 @@ class JiraPlugin implements ScrollsPlugin {
         return [summary: [nbrOfIssues: nbrOfIssues, nbrOfStories: nbrOfStories, nbrOfEpics: nbrOfEpics], issues: issues]
     }
 
+
     @Override
     Map getConfigInfo() {
         return [baseUrl: 'The JIRA server instance base url',
@@ -92,33 +84,42 @@ class JiraPlugin implements ScrollsPlugin {
                 inputFrom: 'git (this plugin parses git commit logs for issue keys!']
     }
 
+    @Override
+    List getImageResources() {
+        def resources = icons.values().collect {
+            "/images/jira/${it}"
+        }
+
+        return resources.unique(false)
+    }
+
+    def getProjects() {
+        return doQuery("${config.baseUrl}/rest/api/latest/project")
+    }
+
     def getIssue(key) {
-        print "Fetching jira issue: ${key}\t"
         return doQuery("${config.baseUrl}/rest/api/latest/issue/${key}")
     }
 
     private doQuery(String url) {
-        def http = new HTTPBuilder(url)
-        http.encoderRegistry = new EncoderRegistry(charset: StandardCharsets.UTF_8.name())
-        http.request(GET, JSON) { req ->
-            headers.'User-Agent' = 'Mozilla/5.0'
-            headers.'Authorization' = 'Basic ' + "${config.username}:${config.password}".toString().bytes.encodeBase64().toString()
+        def headers = ['User-Agent': 'Mozilla/5.0',
+                       'Authorization': "Basic " + "${config.username}:${config.password}".bytes.encodeBase64().toString()]
+        def request = Unirest.get(url).headers(headers)
+        def response = request.asJson()
 
-            response.success = { resp, json ->
-                println Success: resp.status
-                return json
-            }
+        if (response.status != 200) {
+            println "ERROR: jira - Got status code ${response.status} but expected 200 for ${request.url}"
+            return [:]
+        }
 
-            response.failure = { resp, json ->
-                println Failed: resp.status
-                println json
-                return
-            }
+        if (response.body.isArray()) {
+           return response.body.array
+        } else {
+            return response.body.object
         }
     }
 
-
-    def issueReleased(releaseDate, currentState) {
+    static def issueReleased(releaseDate, currentState) {
         def currentDate = new Date()
         return (releaseDate.before(currentDate) && (currentState in ['In use', 'Closed']))
     }
@@ -128,7 +129,7 @@ class JiraPlugin implements ScrollsPlugin {
         boolean storyAdded = false
 
         // TODO: replace this custom field with the non-test jira server custom field name
-        if (check.customfield_11622) {
+        if (check.has('customfield_11622')) {
             def issueIcon = getIssueIcon(check.fields.issuetype.name)
 
             issues.each { issue ->
@@ -153,7 +154,7 @@ class JiraPlugin implements ScrollsPlugin {
                     title: newEpic.fields.summary,
                     link: "${config.baseUrl}/browse/${newEpic.key}",
                     type: newEpic.fields.issuetype.name,
-                    icon: iconEpic,
+                    icon: getIssueIcon('epic'),
                     stories: [
                                 [
                                    key: check.key,
@@ -170,17 +171,16 @@ class JiraPlugin implements ScrollsPlugin {
             }
         }
 
-        return [epicAdded, storyAdded]
+        return new Tuple(epicAdded, storyAdded)
     }
 
-    def getIssueIcon(type) {
-        switch(type) {
-            case "Epic":  return iconEpic
-            case "Bug":   return iconBug
-            case "Story": return iconStory
-            case "Task":  return iconTask
-            case "Service Request": return iconFeature
-            default:      return iconTask
+    def getIssueIcon(String type) {
+        def normalizedType = type.toLowerCase()
+        def icon = 'task'
+        if (normalizedType in icons.keySet()) {
+            icon = normalizedType
         }
+
+        return "images/${name}/${icons[icon]}"
     }
 }
