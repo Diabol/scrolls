@@ -6,7 +6,7 @@ import com.mashape.unirest.http.Unirest
 /**
  * Created by andreas on 2016-10-27.
  */
-class JiraCommitParserPlugin implements ScrollsPlugin {
+class JiraCommitParserPlugin extends JiraPluginBase implements ScrollsPlugin {
     def config
 
     @Override
@@ -29,29 +29,6 @@ class JiraCommitParserPlugin implements ScrollsPlugin {
             }
         }
         return [keys: jiraRefs]
-    }
-
-    def getProjects() {
-        print "Fetching jira project\t"
-        return doQuery("${config.baseUrl}/rest/api/latest/project")
-    }
-
-    private doQuery(String url) {
-        def headers = ['User-Agent': 'Mozilla/5.0',
-                       'Authorization': "Basic " + "${config.username}:${config.password}".bytes.encodeBase64().toString()]
-        def request = Unirest.get(url).headers(headers)
-        def response = request.asJson()
-
-        if (response.status != 200) {
-            println "ERROR: jira - Got status code ${response.status} but expected 200 for ${request.url}"
-            return [:]
-        }
-
-        if (response.body.isArray()) {
-            return response.body.array
-        } else {
-            return response.body.object
-        }
     }
 
     @Override

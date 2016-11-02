@@ -38,6 +38,7 @@ class ScrollsGeneratorTest extends Specification {
             date: new Date().format("yyyy-MM-dd HH:mm:ss"),
             oldVersion: "V1-old",
             newVersion: "V2-new",
+            templates: [git: "git.ftl", jira: "jira.ftl"]
     ]
 
     def gitDataMock = [

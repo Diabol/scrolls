@@ -2,7 +2,7 @@ package se.diabol.scrolls.plugins
 
 import com.mashape.unirest.http.Unirest
 
-class JiraPlugin implements ScrollsPlugin {
+class JiraPlugin extends JiraPluginBase implements ScrollsPlugin {
 
     def config
 
@@ -96,32 +96,6 @@ class JiraPlugin implements ScrollsPlugin {
         }
 
         return resources.unique(false)
-    }
-
-    def getProjects() {
-        return doQuery("${config.baseUrl}/rest/api/latest/project")
-    }
-
-    def getIssue(key) {
-        return doQuery("${config.baseUrl}/rest/api/latest/issue/${key}")
-    }
-
-    private doQuery(String url) {
-        def headers = ['User-Agent': 'Mozilla/5.0',
-                       'Authorization': "Basic " + "${config.username}:${config.password}".bytes.encodeBase64().toString()]
-        def request = Unirest.get(url).headers(headers)
-        def response = request.asJson()
-
-        if (response.status != 200) {
-            println "ERROR: jira - Got status code ${response.status} but expected 200 for ${request.url}"
-            return [:]
-        }
-
-        if (response.body.isArray()) {
-           return response.body.array
-        } else {
-            return response.body.object
-        }
     }
 
     static def issueReleased(releaseDate, currentState) {

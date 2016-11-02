@@ -33,11 +33,11 @@
 </div>
 
 <#list reports as name, report>
-<div class="plugin-report">
     <#if header.templates[name]??>
-        <#include "${header.templates[name]}">
-     </#if>
-</div>
+        <div class="plugin-report">
+            <#include "${header.templates[name]}">
+        </div>
+    </#if>
 </#list>
 
 </body>

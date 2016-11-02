@@ -45,8 +45,8 @@ jiraCommitParser {
     inputFrom = "git"
 
     baseUrl = "https://orbra7.atlassian.net"
-    username = "andreas@diabol.se"
-    password = "Hcm400tc"
+    username = ""
+    password = ""
 }
 
 jira {
@@ -55,7 +55,7 @@ jira {
     template = "jira.ftl"
 
     baseUrl = "https://orbra7.atlassian.net"
-    username = "andreas@diabol.se"
-    password = "Hcm400tc"
+    username = ""
+    password = ""
     omitClosed = true
 }
