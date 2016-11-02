@@ -31,22 +31,23 @@ git {
     ]
 }
 
-//github {
-//    plugin = 'se.diabol.scrolls.plugins.GitHubPlugin'
-//    inputFrom = 'versions'
-//
-//    apiUrl = 'https://api.github.com'
-//    owner = 'Diabol'
-//    repo = 'scrolls'
-//}
+github {
+    plugin = 'se.diabol.scrolls.plugins.GitHubPlugin'
+    inputFrom = 'versions'
+    template = "github.ftl"
+
+    apiUrl = 'https://api.github.com'
+    owner = 'Diabol'
+    repo = 'scrolls'
+}
 
 jiraCommitParser {
     plugin = "se.diabol.scrolls.plugins.JiraCommitParserPlugin"
     inputFrom = "git"
 
     baseUrl = "https://orbra7.atlassian.net"
-    username = ""
-    password = ""
+    username = "diabol"
+    password = "qwerty"
 }
 
 jira {
@@ -55,7 +56,7 @@ jira {
     template = "jira.ftl"
 
     baseUrl = "https://orbra7.atlassian.net"
-    username = ""
-    password = ""
+    username = "diabol"
+    password = "qwerty"
     omitClosed = true
 }

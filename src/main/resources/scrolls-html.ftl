@@ -33,9 +33,9 @@
 </div>
 
 <#list reports as name, report>
-    <#if header.templates[name]??>
+    <#if templates[name]??>
         <div class="plugin-report">
-            <#include "${header.templates[name]}">
+            <#include "${templates[name]}">
         </div>
     </#if>
 </#list>

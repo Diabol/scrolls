@@ -49,12 +49,12 @@ class ScrollsGenerator {
     }
 
     def generate(Map oldVersion, Map newVersion) {
+        Map templates = [:]
         Map header = [
                 component: config.scrolls.component,
                 date: new Date().format("yyyy-MM-dd HH:mm:ss"),
                 oldVersion: oldVersion.version,
-                newVersion: newVersion.version,
-                templates: [:]
+                newVersion: newVersion.version
         ]
 
         println "Collecting data"
@@ -71,33 +71,12 @@ class ScrollsGenerator {
             pluginList.each {plugin ->
                 print "  from ${plugin.name}..."
                 reports[plugin.name] = plugin.plugin.generate(input)
-                header.templates[plugin.name] = plugin.plugin.getTemplateName()
+                templates[plugin.name] = plugin.plugin.getTemplateName()
                 println "OK: ${reports[plugin.name]}"
             }
         }
 
-//        int loopCounter = 0
-//        while (executions.keySet().size() > 0) {
-//            def names = executions.keySet()
-//            names.each {
-//                if (it in reports) {
-//                    executions[it].each {
-//                        print "  from ${it.name}..."
-//                        reports[it.name] = it.plugin.generate(reports[it.config.inputFrom])
-//                        println "OK: ${reports[it.name]}"
-//                    }
-//                    executions.remove(it)
-//                } else {
-//                    loopCounter += 1
-//                }
-//            }
-//
-//            if (loopCounter == 10) {
-//                throw new RuntimeException("Failed to resolve plugin dependencies, please make sure your configuration has no cycles.")
-//            }
-//        }
-
-        generateHtmlReport(header, reports)
+        generateHtmlReport(templates, header, reports)
     }
 
     def buildExecutionMap() {
@@ -120,7 +99,7 @@ class ScrollsGenerator {
         return executions
     }
 
-    def generateHtmlReport(Map header, Map reports) {
+    def generateHtmlReport(Map templates, Map header, Map reports) {
         def parent = new File(config.scrolls.outputDirectory as String)
         def cssDir = new File(parent, 'css')
         def imagesDir = new File(parent, 'images')
@@ -135,7 +114,7 @@ class ScrollsGenerator {
             throw all
         }
 
-        Map dataModel = [header: header, reports: reports]
+        Map dataModel = [templates: templates, header: header, reports: reports]
         processTemplate('scrolls-html.ftl', dataModel, new File(parent, 'index.html'))
         processTemplate('scrolls-css.ftl', dataModel, new File(cssDir, 'scrolls.css'))
 
