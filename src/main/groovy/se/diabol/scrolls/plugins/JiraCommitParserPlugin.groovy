@@ -16,8 +16,11 @@ class JiraCommitParserPlugin extends JiraPluginBase implements ScrollsPlugin {
 
     @Override
     Map generate(Map input) {
-        def projects = getProjects()
-        def projectKeys = projects.collect { it.key }
+        def projectKeys = config.projectKeys
+        if (!projectKeys) {
+            def projects = getProjects()
+            projectKeys = projects.collect { it.key }
+        }
         def jiraRefs = [] as HashSet
         // iterate through all commit comments and match against jira refs for each project key
         input.commits.each { message ->
