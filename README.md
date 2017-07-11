@@ -5,7 +5,7 @@ The Automated Delivery Report Engine
 Scrolls is a highly extensible tool for generating rich release notes or delivery reports combining tangible data from 
 several sources. It's a tool that let's you pull data from many different sources and present it in reports of different
  formats. It has a number of built in adapters for different data sources e.g. Git, Subversion, Github, Jira, Jenkins 
- and SonarCube and can easily be extended with plugins.
+ and SonarQube and can easily be extended with plugins.
  
 Scrolls purpose is to support the principles of Continuous Delivery by providing traceability and transparency in the 
 delivery process. It gives you the ability to take fast and informed decisions while delivering quality software at 
@@ -17,8 +17,8 @@ speed. Stop spending countless hours in status report meetings or running around
 ## Configure
 
 ## Run
-Scrolls main interface is it's configuration file and it's command line interface. The basic concept is that plugins
-(i.e. services) are configured in the configuration file and run-time options are given to the cli.
+Scrolls' main interface is its configuration file and its command line interface (CLI). The basic concept is that plugins
+(i.e. services) are configured in the configuration file and runtime options are given to the CLI.
 
 Developers can run using gradle: 
 
@@ -38,7 +38,7 @@ entire system. The format for specifying a multi repo version is JSON:
     "version": "1.0.0",
     "repos": {
         "scrolls-core": {"name": "scrolls-core", "version": "1.0.0"},
-        "scrolls-api": {"name": "scrolls-api", "version": "1.0.0"},
+        "scrolls-api": {"name": "scrolls-api", "version": "1.0.0"}
     }
 }
 ```
@@ -65,5 +65,3 @@ indicate which template you want to override.
  * scrolls-html.ftl for the main/global template
  * scrolls-css.ftl to override the stylesheet used
  * &lt;pluginname&gt;.ftl to override a plugin template (e.g. git.ftl or github.ftl)
-
-## Extend
